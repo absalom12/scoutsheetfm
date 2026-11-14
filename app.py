@@ -1000,6 +1000,17 @@ def _col(c, mode="full"):
     return f'"{c}"'
 
 
+
+
+def _sort_expr(c, mode):
+    col = _col(c, mode)
+    if c != "natural_positions":
+        return col
+    # Positions sort the way they stand on the pitch (keeper first, strikers last), by the first natural position.
+    order = PITCH_ORDER + ["STC"]
+    return "CASE split_part(natural_positions, ';', 1) " + " ".join(f"WHEN '{k}' THEN {i}" for i, k in enumerate(order)) + f" ELSE {len(order)} END"
+
+
 def build(q: Query):
     mode = q.mode = _mode(q.mode, q.fair_play)
     where, args = [], []
@@ -1059,7 +1070,7 @@ def build(q: Query):
     if q.hide_hidden_risks and full:
         where.append("attributes_injury_proneness <= 12 AND attributes_consistency >= 8 AND personality_professionalism >= 8")
     w = "WHERE " + " AND ".join(where) if where else ""
-    order = [f'{_col(s["colId"], mode)} {"DESC" if s["sort"] == "desc" else "ASC"} NULLS LAST' for s in q.sort]
+    order = [f'{_sort_expr(s["colId"], mode)} {"DESC" if s["sort"] == "desc" else "ASC"} NULLS LAST' for s in q.sort]
     if not order and q.preset and not uses_hidden(PRESETS[q.preset][4], mode):
         order = [PRESETS[q.preset][4] + " NULLS LAST"]
     if not order and q.similar_to is not None:

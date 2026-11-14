@@ -519,3 +519,12 @@ def test_club_out_of_possession_shape_blends_and_feeds_targets(squad, client):
     assert client.get("/api/club", params={"oop": "GK,DR"}).status_code == 400
     r = client.post("/api/club/needs", json={"formation": f.split(","), "oop": d["out_formation"], "slot_index": 10}).json()["rows"]
     assert r and all(x["fit_in"] is not None and x["fit_out"] is not None for x in r)
+
+
+def test_position_sort_follows_the_pitch(scout, monkeypatch):
+    import duckdb
+    monkeypatch.setattr(scout, "VISIBLE", {"full": {"natural_positions"}})
+    expr = scout._sort_expr("natural_positions", "full")
+    rows = duckdb.sql(f"SELECT natural_positions FROM (VALUES ('STC'), ('AMC;MC'), ('GK'), ('DR;DC'), ('DC'), ('ML'), ('DM')) t(natural_positions) "
+                      f"ORDER BY {expr}").fetchall()
+    assert [r[0] for r in rows] == ["GK", "DR;DC", "DC", "DM", "ML", "AMC;MC", "STC"]

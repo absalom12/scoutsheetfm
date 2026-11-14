@@ -299,7 +299,7 @@ details[open] summary::before { content: "−"; }
 .pp-nm { display: flex; align-items: center; gap: 10px; min-width: 0; } .pp-nm h1 { min-width: 0; }
 .pp-id .pp-pos { flex: none; white-space: nowrap; } .pp-id .pp-pos .muted { font-size: 12px; margin: 0 5px 0 2px; } .pp-nm .pos { font-size: 13px; line-height: 22px; padding: 0 7px; }
 .feet { display: inline-flex; gap: 10px; margin-left: 10px; vertical-align: middle; } .feet > span { display: inline-flex; align-items: center; gap: 5px; }
-.feet > span { color: var(--text2); font-size: 13px; } .fstars { font: normal 13px/1 var(--f-body); letter-spacing: 0; } .fstars i { font-style: normal; color: var(--line2); }
+.feet > span { color: var(--text2); font-size: 13px; } .fstars { font: normal 13px/1 var(--f-body); letter-spacing: 0; color: var(--gold); } .fstars i { font-style: normal; color: var(--line2); }
 .feet small { font-size: 12px; color: var(--text2); }
 .pp-tabrow { flex: none; display: flex; align-items: flex-end; gap: 16px; margin-top: 8px; border-bottom: 1px solid var(--line); }
 .pp-tabs { flex: none; display: flex; gap: 4px; }
@@ -2071,7 +2071,7 @@ const FOOT_W = [[18, 'Very strong'], [15, 'Strong'], [12, 'Fairly strong'], [9, 
 // Feet as /5 stars (FM's 1-20 rounded to the nearest 4, at least 1), stronger foot first; the FM word and the 1-20 grade in the tooltip.
 const footStars = v => Math.min(5, Math.max(1, Math.round(v / 4)));
 const feetHTML = p => p.left_foot == null || p.right_foot == null ? '' : `<span class="feet">${[['Right', p.right_foot], ['Left', p.left_foot]].sort((a, b) => b[1] - a[1]).map(([s, v]) => { const w = FOOT_W.find(x => v >= x[0])[1], n = footStars(v);
-  return `<span title="${s} foot: ${w} (${v}/20)" role="img" aria-label="${s} foot ${n} of 5 stars, ${w.toLowerCase()}">${s} foot <b class="fstars" aria-hidden="true" style="color:${scoreColor(n * 20)}">${'★'.repeat(n)}<i>${'★'.repeat(5 - n)}</i></b></span>`; }).join('')}</span>`;
+  return `<span title="${s} foot: ${w} (${v}/20)" role="img" aria-label="${s} foot ${n} of 5 stars, ${w.toLowerCase()}">${s} foot <b class="fstars" aria-hidden="true">${'★'.repeat(n)}<i>${'★'.repeat(5 - n)}</i></b></span>`; }).join('')}</span>`;
 // Header sub-line: club first and bold, league when known, then nation, age, height and feet in grey.
 const subLine = (p, big, mb) => `<p class="pp-sub"><b class="pp-club">${esc(p.club_name || 'Free agent')}</b>${p.league ? `<span class="pp-lg">${esc(p.league)}</span>` : ''}<span class="pp-meta">${natHTML(p, big) || 'Unknown nation'} ${p.age} yrs${p.height_cm ? `, ${height(p.height_cm)}` : ''}</span>${mb ? '' : feetHTML(p)}</p>`;
 const roleList = p => MODE === 'moneyball' ? [] : Object.keys(META.roles).map(r => [r, p['role_' + r]]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
@@ -4671,6 +4671,7 @@ $('#es').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t || !D) return;
   const d = t.dataset;
   if (d.esClose != null) $('#es').close();
+  else if (d.capx) capX(d.capx);  // the Value / Wage tiles' × (the document handler skips buttons inside #es)
   else if (d.espers) {
     const k = 'personality_' + d.espers, box = $('#esBody'), top = box.scrollTop;
     if (d.espers === 'controversy') { if (persOn(D, d.espers)) delete D.max[k]; else D.max[k] = 5; }
