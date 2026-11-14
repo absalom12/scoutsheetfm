@@ -242,7 +242,7 @@ def squad(scout, monkeypatch):
     deal = ", ".join(f"0.0 AS {k}_{m}" for k in scout.PER_MODE for m in scout.MODES)
     con.execute(f"""CREATE OR REPLACE TABLE players AS SELECT uid, 'P' || uid AS name, 25 AS age, 120 AS ability_current,
         140 AS ability_potential, 1000000 AS transfer_value, 1000 AS contract_wage, club_uid, 'Club ' || club_uid AS club_name,
-        'Men' AS gender, false AS free_agent, perf AS stat_score, 1500 AS s_minutes, {cols}, {deal} FROM w""")
+        'Men' AS gender, false AS free_agent, upper(p) AS natural_positions, perf AS stat_score, 1500 AS s_minutes, {cols}, {deal} FROM w""")
     cols = {r[0] for r in con.execute("DESCRIBE players").fetchall()}
     fair = {c for c in cols if c.startswith(scout.HIDDEN_PREFIXES)}
     hidden = {"full": set(), "fair": fair, "moneyball": fair | {c for c in cols if c.startswith(scout.MONEYBALL_PREFIXES)}}
@@ -505,3 +505,17 @@ def test_stats_csv_reads_an_empty_stat_column_as_numeric(scout, tmp_path):
     types = dict(scout.con().execute(f"DESCRIBE SELECT * FROM {scout._stats_csv(f)}").fetchall()[i][:2] for i in range(3))
     assert types["pressures_completed"] == "DOUBLE" and types["minutes"] == "BIGINT"
     assert scout.con().execute(f"SELECT sum(pressures_completed) FROM {scout._stats_csv(f)}").fetchone() == (None,)
+
+
+def test_club_out_of_possession_shape_blends_and_feeds_targets(squad, client):
+    f = "GK,DR,DC,DC,DL,DM,DM,AMR,AMC,AML,ST"
+    d = client.get("/api/club", params={"formation": f, "oop": f.replace("AMC", "ST").replace(",ST", ",AMC")}).json()
+    s = d["slots"][10]
+    assert s["pos"] == "ST" and s["out_pos"] == "AMC" and d["out_formation"][10] == "AMC"
+    assert s["starter"]["uid"] == 11  # who may play the slot follows its in-possession position
+    assert {"fit_in", "fit_out"} <= set(s["starter"]) and s["starter"]["fit"] == 60  # every role score is 60 here
+    me = next(p for p in d["squad"] if p["uid"] == 11)
+    assert me["slot"] == 10 and me["fam"][0] < 15 and me["fits"][0] is not None  # in goal: a fit, but unfamiliar
+    assert client.get("/api/club", params={"oop": "GK,DR"}).status_code == 400
+    r = client.post("/api/club/needs", json={"formation": f.split(","), "oop": d["out_formation"], "slot_index": 10}).json()["rows"]
+    assert r and all(x["fit_in"] is not None and x["fit_out"] is not None for x in r)
