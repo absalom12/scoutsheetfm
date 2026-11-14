@@ -670,6 +670,57 @@ dialog.pal[open] { display: flex; animation: palIn var(--t) var(--ease); }
 .drop { display: grid; justify-items: center; gap: 6px; padding: 28px 16px; border: 2px dashed var(--line2); border-radius: var(--r); color: var(--muted); text-align: center; transition: border-color var(--t), background var(--t); }
 .drop b { color: var(--text); font-size: 15px; }
 .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+dialog.sp { width: min(840px, calc(100vw - 32px)); max-height: calc(100vh - 48px); margin: 6vh auto auto; }
+.sp .es-head h2 { font: 700 20px/1 var(--f-display); letter-spacing: .04em; text-transform: uppercase; margin: 0; }
+.sp-src { display: flex; gap: 8px; padding: 14px 18px 0; align-items: center; min-width: 0; }
+.sp-src label { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); }
+.sp-src label span, .sp-lh, .sp-kv dt { font: 600 11px var(--f-mono); color: var(--faint); letter-spacing: .07em; text-transform: uppercase; }
+.sp-src select { background: transparent; border: 0; font-weight: 700; color: var(--text); }
+.sp-path { flex: 1; min-width: 0; color: var(--muted); font: 12px var(--f-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-box { margin: 12px 18px 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg2); overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+.sp-tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 6px; align-items: center; }
+.sp-tabs button { position: relative; height: 44px; padding: 0 16px; font: 600 16px var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.sp-tabs button .n { font: 600 11px var(--f-mono); color: var(--faint); background: var(--raise); border-radius: 99px; padding: 1px 7px; letter-spacing: 0; }
+.sp-tabs button[aria-selected=true] { color: var(--text); }
+.sp-tabs button[aria-selected=true]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px; }
+.sp-tabs button[aria-selected=true] .n { color: var(--accent); background: var(--accent-soft); }
+.sp-new { margin-left: auto; margin-right: 8px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: var(--r-pill); background: var(--warn-soft); color: var(--warn); }
+.sp-body { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); height: min(330px, calc(100vh - 330px)); min-height: 200px; }
+.sp-list { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.sp-lh, .sp-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) 128px 56px; gap: 10px; align-items: center; padding: 0 12px; }
+.sp-lh { height: 30px; border-bottom: 1px solid var(--line); flex: none; }
+.sp-rows { overflow: auto; flex: 1; }
+.sp-row { min-height: 38px; width: 100%; text-align: left; border-left: 2px solid transparent; }
+.sp-row:nth-child(even) { background: rgba(255,255,255,.022); }
+.sp-row:hover { background: var(--hover); }
+.sp-row .rd { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line2); display: grid; place-items: center; }
+.sp-row .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-row .dt, .sp-row .sz { font: 12px var(--f-mono); color: var(--muted); white-space: nowrap; } .sp-row .sz { text-align: right; }
+.sp-row[aria-checked=true] { background: var(--accent-soft); border-left-color: var(--accent); }
+.sp-row[aria-checked=true] .rd { border-color: var(--accent); }
+.sp-row[aria-checked=true] .rd::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.sp-row.fail .nm::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--bad); margin-left: 8px; }
+.sp-info { padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; overflow: auto; }
+.sp-info.empty { align-items: center; justify-content: center; text-align: center; color: var(--muted); }
+.sp-info h3 { margin: 0; font: 700 22px/1.1 var(--f-display); letter-spacing: .02em; word-break: break-word; }
+.sp-kv { display: grid; grid-template-columns: 96px 1fr; row-gap: 9px; font-size: 13px; margin: 0; }
+.sp-kv dt { padding-top: 2px; } .sp-kv dd { margin: 0; }
+.sp-gm { display: inline-block; font: 700 11px var(--f-mono); padding: 2px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); }
+.sp-fail { border: 1px solid rgba(255,111,111,.35); background: var(--bad-soft); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.sp-fail b { color: var(--bad); } .sp-fail p { margin: 0; color: var(--text2); font-size: 13px; }
+.sp-empty { grid-column: 1 / -1; display: grid; place-items: center; align-content: center; text-align: center; gap: 6px; padding: 20px; color: var(--muted); }
+.sp-empty b { color: var(--text); font-size: 15px; }
+.sp-empty code { font: 12px var(--f-mono); color: var(--text2); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; margin-top: 6px; word-break: break-all; }
+.sp-empty .lnk { color: var(--accent); font-weight: 600; }
+.sp-foot { display: flex; align-items: center; gap: 10px; padding: 14px 18px; }
+.sp-note { display: flex; gap: 8px; align-items: flex-start; max-width: 420px; font-size: 12px; color: var(--muted); line-height: 1.35; margin-right: auto; }
+.sp-note b { color: var(--text2); }
+#spLoad:disabled:not([aria-busy=true]) { opacity: .4; cursor: not-allowed; }
+@media (max-width: 640px) {
+  .sp-body { grid-template-columns: 1fr; height: auto; } .sp-list { border-right: 0; border-bottom: 1px solid var(--line); } .sp-rows { max-height: 40vh; }
+  .sp-lh, .sp-row { grid-template-columns: 22px minmax(0, 1fr) 100px; } .sp-lh :last-child, .sp-row .sz { display: none; } .sp-row { min-height: 44px; }
+  .sp-foot { flex-wrap: wrap; } .sp-note { max-width: none; flex-basis: 100%; } .sp-foot .btn { min-height: 44px; }
+}
 .load-saves { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .load-saves .btn { justify-content: space-between; text-align: left; white-space: normal; height: auto; min-height: 36px; padding-block: 6px; overflow-wrap: anywhere; }  /* long save names wrap */
 @keyframes palIn { from { transform: translateY(-8px) scale(.98); opacity: 0; } }
@@ -1305,16 +1356,22 @@ dialog.es.set { width: min(660px, calc(100vw - 32px)); height: auto; max-height:
     <div id="cmpBody" class="es-body"></div>
   </div>
 </dialog>
-<dialog id="load" class="pal" aria-labelledby="loadTitle">
+<dialog id="load" class="pal sp" aria-labelledby="loadTitle">
   <header class="es-head"><h2 id="loadTitle">Load a save</h2><button type="button" class="icon-btn" data-load-close aria-label="Close">×</button></header>
-  <div class="load-body">
-    <button type="button" class="drop" id="dropZone">
-      <svg width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-      <b>Drop your .fm save here</b><span>or click to browse your computer</span>
-    </button>
-    <div class="pal-g" style="padding-left:0">Saves found in your FM26 folder</div>
-    <div id="loadSaves" class="load-saves"><span class="sk" style="width:100%;height:36px"></span></div>
+  <div class="sp-src">
+    <label><span>Source</span><select aria-label="Source"><option>Local</option></select></label>
+    <button type="button" class="btn" data-browse>Browse...</button>
+    <span class="sp-path" id="spPath"></span>
   </div>
+  <div class="sp-box">
+    <div class="sp-tabs" role="tablist" id="spTabs"></div>
+    <div class="sp-body" id="spBody"></div>
+  </div>
+  <footer class="sp-foot">
+    <div class="sp-note" id="spNote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg><span><b>FM27 support is new.</b> Your data is read, but not every field has been checked yet. Tell us if something looks off.</span></div>
+    <button type="button" class="btn" data-load-close>Cancel</button>
+    <button type="button" class="btn primary" id="spLoad" disabled>Load</button>
+  </footer>
 </dialog>
 
 <dialog id="pal" class="pal" aria-label="Lists and commands">
@@ -3039,7 +3096,7 @@ function paletteItems() {
   saved.forEach(s => it.push({ g: 'Saved searches', l: s.name, d: critList(s.f).map(c => c[0].replace(/<[^>]+>/g, '')).join(' · ') || 'No extra criteria', run: () => loadSearch(s) }));
   it.push({ g: 'Actions', l: 'Edit search', d: 'All criteria: nationality, attributes, stats, contract…', k: 'e', run: openES },
     { g: 'Actions', l: 'Export CSV', d: 'Current list with all columns', run: exportCSV },
-    { g: 'Actions', l: 'Load .fm save', d: 'Drop a save, browse, or pick one from your FM26 folder', run: openLoad },
+    { g: 'Actions', l: 'Load .fm save', d: 'Drop a save, browse, or pick one from your FM27 or FM26 folder', run: openLoad },
     { g: 'Actions', l: 'Reset filters', d: 'Clear quick filters, criteria, search and column filters', run: resetAll });
   if (st.preset) it.push({ g: 'Actions', l: 'Clear list', d: 'Back to all players', run: () => pickList(st.preset) });
   return it;
@@ -4009,8 +4066,8 @@ function setGender(g) {
   try { g ? localStorage.setItem('fm26_gender', g) : localStorage.removeItem('fm26_gender'); } catch {}
 }
 let uploading = false, EMPTY = false;
-async function runLoad(doFetch) {
-  if (uploading) return;
+async function runLoad(doFetch, quiet) {  // quiet: return the error ({status, message}) instead of a toast; null = loaded
+  if (uploading) return quiet ? { status: 409, message: 'Another save is already loading.' } : undefined;
   uploading = true;
   const btn = $('#loadBtn'), t0 = Date.now();
   btn.disabled = true; $('#progress').classList.add('on');
@@ -4025,13 +4082,14 @@ async function runLoad(doFetch) {
   try {
     const r = await doFetch();
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.detail === 'busy' ? 'Another save is already loading.' : d.detail || 'Upload failed');
-    if (EMPTY) return location.reload();
+    if (!r.ok) throw Object.assign(new Error(d.detail === 'busy' ? 'Another save is already loading.' : d.detail || 'Upload failed'), { status: r.status });
+    if (EMPTY) { location.reload(); return null; }
     META.game_date = d.game_date; peerCache.clear(); allCache.clear();
     toast(`Loaded ${Number(d.rows).toLocaleString()} players · game date ${d.game_date}`, 'good', 5000);
     refresh(); renderSummary();
     if (CLUB) { CLUB = null; if (st.page === 'club') loadClub(); }
-  } catch (e) { toast('Upload failed: ' + e.message, 'bad', 8000); }
+    return null;
+  } catch (e) { if (quiet) return { status: e.status, message: e.message }; toast('Upload failed: ' + e.message, 'bad', 8000); }
   finally { clearInterval(iv); uploading = false; btn.disabled = false; btn.innerHTML = '<span>Load save</span>'; $('#progress').classList.remove('on', 'pct'); $('#file').value = ''; }
 }
 function upload(f) {
@@ -4041,17 +4099,12 @@ function upload(f) {
   const fd = new FormData(); fd.append('file', f);
   return runLoad(() => fetch('/api/upload', { method: 'POST', body: fd }));
 }
-const loadNamed = name => runLoad(() => fetch('/api/load-save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) }));
+const loadNamed = (name, game) => runLoad(() => fetch('/api/load-save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, game }) }));
 
 async function showWelcome() {
-  $('#grid').innerHTML = emptyState('Load your save', 'Pick a Football Manager 26 save to start scouting. Extraction takes about a minute.', '<div id="saves" style="display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:12px"></div>');
-  let d = { folder_found: false, saves: [] };
-  try { d = await (await api('/api/saves')).json(); } catch {}
-  const box = $('#saves');
-  box.innerHTML = d.saves.length
-    ? d.saves.map(s => `<button class="btn" data-save="${esc(s.name)}">${esc(s.name)} · ${Math.round(s.size / 1048576)} MB · ${new Date(s.mtime * 1000).toLocaleString()}</button>`).join('')
-    : `<p>${d.folder_found ? 'No .fm save found in the default FM26 folder.' : 'FM26 save folder not found.'} Use “Load save” (top right) to pick your .fm file.</p>`;
-  box.onclick = e => { const b = e.target.closest('[data-save]'); if (b) loadNamed(b.dataset.save); };
+  $('#grid').innerHTML = emptyState('Load your save', 'Pick a Football Manager 27 or 26 save to start scouting. Extraction takes about a minute.', '<div style="margin-top:12px"><button type="button" class="btn primary" id="welcomeLoad">Choose a save</button></div>');
+  $('#welcomeLoad').onclick = openLoad;
+  openLoad();
 }
 async function waitReady() {
   $('#grid').innerHTML = emptyState('Loading your data…', '<span id="loadStep">Starting…</span><span class="load-bar"><i id="loadFill"></i></span>');
@@ -4238,23 +4291,88 @@ $$('.qf').forEach(el => {
 });
 $('#reset').onclick = resetAll;
 $('#exportBtn').onclick = exportCSV;
+// Save picker: one tab per game folder (FM27, FM26), modelled on FM's own load dialog.
+const SP = { games: [], tab: null, sel: null, fail: null, busy: false, tok: 0 };
+const spDate = t => { const d = new Date(t * 1000), z = n => String(n).padStart(2, '0');
+  return `${z(d.getDate())}/${z(d.getMonth() + 1)}/${z(d.getFullYear() % 100)} - ${z(d.getHours())}:${z(d.getMinutes())}`; };
+const spMB = b => `${Math.max(1, Math.round(b / 1048576))} MB`;
+const spGame = () => SP.games.find(g => g.game === SP.tab) || { saves: [] };
 async function openLoad() {
   const d = $('#load'); if (d.open) return; d.showModal();
-  let r = { folder_found: false, saves: [] };
+  SP.sel = null; SP.fail = null; SP.games = [];
+  $('#spTabs').innerHTML = ''; $('#spBody').innerHTML = '<div class="sp-empty"><span class="sk" style="width:60%;height:14px"></span></div>';
+  let r = { games: [] };
   try { r = await (await api('/api/saves')).json(); } catch {}
-  $('#loadSaves').innerHTML = r.saves.length
-    ? r.saves.map(s => `<button type="button" class="btn" data-save="${esc(s.name)}"><span>${esc(s.name)}</span><span class="muted mono" style="font-size:12px">${Math.round(s.size / 1048576)} MB · ${new Date(s.mtime * 1000).toLocaleDateString('en-GB')}</span></button>`).join('')
-    : `<p class="note" style="margin:0">${r.folder_found ? 'No .fm save in the default FM26 folder.' : 'FM26 save folder not found.'} Drop the file above or browse to it.</p>`;
+  SP.games = r.games || [];
+  const newest = SP.games.flatMap(g => g.saves.map(s => [s.mtime, g.game])).sort((a, b) => b[0] - a[0])[0];
+  SP.tab = newest ? newest[1] : (SP.games[0] || {}).game;
+  spRender();
+}
+function spRender() {
+  const g = spGame();
+  $('#spTabs').innerHTML = SP.games.map(x => `<button type="button" role="tab" data-tab="${x.game}" aria-selected="${x.game === SP.tab}">${x.game} <span class="n">${x.saves.length}</span></button>`).join('')
+    + (SP.games.some(x => x.game === 'FM27') ? '<span class="sp-new">New</span>' : '');
+  $('#spPath').textContent = g.folder || ''; $('#spPath').title = g.folder || '';
+  if (!g.saves.length) {
+    $('#spBody').innerHTML = `<div class="sp-empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <b>No ${SP.tab} saves found</b><span>ScoutSheet looked here and ${g.folder_found ? 'found no .fm file' : 'the folder does not exist'}:</span><code>${esc(g.folder || '')}</code>
+      <span>Played ${SP.tab} somewhere else? <button type="button" class="lnk" data-browse>Browse...</button> or drop a .fm file anywhere in this window.</span></div>`;
+  } else {
+    $('#spBody').innerHTML = `<div class="sp-list"><div class="sp-lh"><span></span><span>Name</span><span>Last saved</span><span style="text-align:right">Size</span></div>
+      <div class="sp-rows" role="radiogroup" aria-label="${SP.tab} saves">${g.saves.map(s => `<button type="button" class="sp-row${SP.fail === s.name ? ' fail' : ''}" role="radio" aria-checked="${SP.sel === s.name}" data-save="${esc(s.name)}"><span class="rd"></span><span class="nm" title="${esc(s.name)}">${esc(s.name.replace(/\.fm$/i, ''))}</span><span class="dt">${spDate(s.mtime)}</span><span class="sz">${spMB(s.size)}</span></button>`).join('')}</div></div>
+      <div class="sp-info" id="spInfo"></div>`;
+    spInfo();
+  }
+  spButton();
+}
+function spButton() {
+  const b = $('#spLoad');
+  b.disabled = !SP.sel || SP.busy; b.setAttribute('aria-busy', SP.busy);
+  if (!SP.busy) b.textContent = SP.fail && SP.fail === SP.sel ? 'Try again' : 'Load';
+}
+async function spInfo(fetchIt) {
+  const box = $('#spInfo'); if (!box) return;
+  const s = spGame().saves.find(x => x.name === SP.sel);
+  if (!s) { box.className = 'sp-info empty'; box.textContent = 'Select a save to see its info.'; return; }
+  box.className = 'sp-info';
+  const kv = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
+  const draw = (i = {}) => {
+    box.innerHTML = `<h3>${esc(s.name.replace(/\.fm$/i, ''))}</h3><dl class="sp-kv">${kv('Game', `<span class="sp-gm">${esc(i.game || SP.tab)}</span>`)}`
+      + (i.game_date ? kv('In-game date', `<span class="mono">${i.game_date.split('-').reverse().join('/')}</span>`) : i.game_date === undefined ? kv('In-game date', '<span class="sk" style="width:40%;height:14px"></span>') : '')
+      + (i.club === undefined ? kv('Managing', '<span class="sk" style="width:60%;height:14px"></span>') : i.club ? kv('Managing', esc(i.club)) : '')
+      + (SP.fail === s.name ? '' : kv('Last saved', `<span class="mono">${spDate(s.mtime)}</span>`) + kv('Size', `<span class="mono">${spMB(s.size)}</span>`)) + '</dl>'
+      + (SP.fail === s.name ? `<div class="sp-fail" role="alert"><b>⚠ This save could not be opened</b>${(i.game || SP.tab) === 'FM27'
+          ? '<p>Long FM27 careers sometimes can\'t be read yet. It is a known issue on our side and we are fixing it. Your save is untouched.</p><p>Pick another save to keep going, such as a shorter career.</p>'
+          : '<p>Your save is untouched. Pick another save to keep going.</p>'}</div>` : '');
+  };
+  if (!fetchIt && SP.info && SP.info.name === s.name) return draw(SP.info);
+  const tok = ++SP.tok, q = `name=${encodeURIComponent(s.name)}&game=${SP.tab}`;
+  SP.info = { name: s.name }; draw();
+  const get = async extra => { try { const r = await fetch('/api/save-info?' + q + extra); return r.ok ? r.json() : {}; } catch { return {}; } };
+  const head = await get(''); if (tok !== SP.tok) return;
+  Object.assign(SP.info, head, { game_date: head.game_date || null }); draw(SP.info);  // null: header unreadable, the line goes
+  const c = await get('&club=1'); if (tok !== SP.tok) return;
+  SP.info.club = c.club || null; draw(SP.info);
+}
+async function spLoad() {
+  if (!SP.sel || SP.busy) return;
+  const name = SP.sel, game = SP.tab, b = $('#spLoad');
+  SP.busy = true; SP.fail = null; spButton(); b.innerHTML = '<span class="spin" aria-hidden="true"></span><span>Loading…</span>';
+  const err = await runLoad(() => fetch('/api/load-save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, game }) }), true);
+  SP.busy = false;
+  if (err === null) { if ($('#load').open) $('#load').close(); return; }
+  if (err.status === 400) { SP.fail = name; spRender(); } else { spButton(); toast('Upload failed: ' + err.message, 'bad', 8000); }
 }
 $('#loadBtn').onclick = openLoad;
 $('#load').addEventListener('click', e => {
-  const t = e.target, s = t.closest('[data-save]');
-  if (t.closest('#dropZone')) $('#file').click();
-  else if (s) { $('#load').close(); loadNamed(s.dataset.save); }
-  else if (t.closest('[data-load-close]') || t === $('#load')) $('#load').close();
+  const t = e.target, tab = t.closest('[data-tab]'), s = t.closest('[data-save]');
+  if (t.closest('[data-browse]')) $('#file').click();
+  else if (tab && !SP.busy) { SP.tab = tab.dataset.tab; SP.sel = null; spRender(); }
+  else if (s && !SP.busy) { SP.sel = s.dataset.save; if (SP.fail !== SP.sel) SP.fail = null; $$('#spBody .sp-row').forEach(r => { r.setAttribute('aria-checked', r === s); r.classList.toggle('fail', r.dataset.save === SP.fail); }); spInfo(); spButton(); }
+  else if (t.closest('#spLoad')) spLoad();
+  else if ((t.closest('[data-load-close]') || t === $('#load')) && !SP.busy) $('#load').close();
 });
-['dragenter', 'dragover'].forEach(ev => $('#dropZone').addEventListener(ev, () => $('#dropZone').classList.add('over')));
-['dragleave', 'drop'].forEach(ev => $('#dropZone').addEventListener(ev, () => $('#dropZone').classList.remove('over')));
+$('#load').addEventListener('cancel', e => { if (SP.busy) e.preventDefault(); });
 $('#file').onchange = e => upload(e.target.files[0]);
 $('#palBtn').onclick = () => openPalette();
 $('#esBtn').onclick = () => META && openES();
@@ -4471,15 +4589,15 @@ async function saveWatch() {
   const key = r.changed ? 'c:' + r.changed : r.newer ? 'n:' + r.newer : '';
   if (!key || key === watchLater || uploading) { if (!key) el.hidden = true; return; }
   el.innerHTML = r.changed
-    ? `<span>Your save changed in FM. Reload now? <span class="muted">(about 1 minute)</span></span><button class="btn primary" data-watch-go="${esc(r.changed)}">Reload</button>`
-    : `<span>A newer save of your ${esc(r.club || '')} career: <b>${esc(r.newer)}</b> · ${esc(dDate(r.game_date))}. Switch to it?</span><button class="btn primary" data-watch-go="${esc(r.newer)}">Switch</button>`;
+    ? `<span>Your save changed in FM. Reload now? <span class="muted">(about 1 minute)</span></span><button class="btn primary" data-watch-go="${esc(r.changed)}" data-watch-game="${esc(r.game || 'FM26')}">Reload</button>`
+    : `<span>A newer save of your ${esc(r.club || '')} career: <b>${esc(r.newer)}</b> · ${esc(dDate(r.game_date))}. Switch to it?</span><button class="btn primary" data-watch-go="${esc(r.newer)}" data-watch-game="${esc(r.game || 'FM26')}">Switch</button>`;
   el.insertAdjacentHTML('beforeend', `<button class="btn" data-watch-later="${esc(key)}">Later</button>`);
   el.hidden = false;
 }
 $('#saveStrip').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   $('#saveStrip').hidden = true;
-  if (t.dataset.watchGo) loadNamed(t.dataset.watchGo); else watchLater = t.dataset.watchLater;
+  if (t.dataset.watchGo) loadNamed(t.dataset.watchGo, t.dataset.watchGame); else watchLater = t.dataset.watchLater;
 });
 saveWatch(); setInterval(saveWatch, 30000);
 ping(); setInterval(ping, 30000);  // the server quits after 10 min without a ping (or 15 s after the tab closes)

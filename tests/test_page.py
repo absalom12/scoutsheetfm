@@ -12,7 +12,7 @@ sync_api = pytest.importorskip("playwright.sync_api")
 def server(tmp_path, monkeypatch):
     monkeypatch.setenv("SCOUTSHEET_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("SCOUTSHEET_SAVES_DIR", str(tmp_path / "saves"))
-    (tmp_path / "saves").mkdir()
+    (tmp_path / "saves" / "Football Manager 26" / "games").mkdir(parents=True)
     import app
     monkeypatch.setattr(app, "STATUS", "empty")
     with socket.socket() as s:

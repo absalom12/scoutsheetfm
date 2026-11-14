@@ -4,7 +4,7 @@ import telemetry, updater
 import numpy as np
 from nations import NATIONS
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
-from datadir import FILES, data_dir, list_saves, replace_data, resolve_save
+from datadir import FILES, GAMES, data_dir, list_saves, replace_data, resolve_save, saves_dir
 from pathlib import Path
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
@@ -32,7 +32,7 @@ def _step(frac, next_frac, step):
 _ingest_lock = threading.Lock()  # one load at a time (startup load or a save load)
 LAST_PING, BYE_AT = time.monotonic(), None
 OPEN_PATHS = {"/", "/api/status", "/api/saves", "/api/load-save", "/api/upload", "/api/ping", "/api/bye", "/api/telemetry",
-              "/api/track", "/api/save-watch"}
+              "/api/track", "/api/save-watch", "/api/save-info"}
 
 
 def need_data(request: Request):
@@ -285,6 +285,26 @@ def infer_formation(matches, last=5):
     return out[:11]
 
 
+def read_tactics(s, club_uid):
+    """The first team's saved tactics, the active one (index 0) first, with the starting XI in slot order.
+    A tactic slot's position is a bit number of the same mask MATCH_POS decodes (bit 10 = MC, which fmsave leaves
+    UNKNOWN). Only first-team tactics (team_slot 0) count: team_slot 1 and 2 are the reserve and youth sides'.
+    [] when the save holds no usable tactic, so the caller falls back to infer_formation."""
+    def shape(positions):
+        return [MATCH_POS.get(1 << p[0].raw) if p and p[0].raw >= 0 else None for p in positions]
+    out = []
+    for t in sorted((t for t in s.tactics() if t.club_uid == club_uid and t.team_slot == 0), key=lambda t: t.index):
+        ip = shape([sl.in_possession_positions for sl in t.slots])
+        oop = shape([sl.out_of_possession_positions for sl in t.slots])
+        if len(ip) == 11 and all(p in SLOT_GROUP for p in ip):
+            out.append({"name": t.name, "style": t.style_name, "mentality": t.mentality and t.mentality.label.name.lower(),
+                        "in_possession": ip, "out_of_possession": oop if all(p in SLOT_GROUP for p in oop) and len(oop) == 11 else ip})
+    if out:
+        xi = {x.slot: x.player_uid for x in s.selections() if x.club_uid == club_uid and x.team_slot == 0 and not x.substitute}
+        out[0]["xi"] = [xi.get(i) for i in range(11)]
+    return out
+
+
 def club_leagues(tables):
     """club_uid -> league id, from (table_key, club_count, club_uids) classification tables.
     The caller passes only competitions with promotion or relegation (real leagues, not cups or playoffs). A club can
@@ -331,10 +351,18 @@ def extract(save_path, out_dir, players=True):
         _step(.92, 1, "Finding your club")
         club = next(iter(s.managed_clubs()), None)
         if club:
-            squad = {p.uid for p in s.players() if p.club_uid == club.club_uid}
-            formation = infer_formation(m for m in s.player_match_stats() if m.player_uid in squad)
+            info = {"club_uid": club.club_uid, "club_name": club.club_name, "game": s.info.game}
+            try:
+                tactics = read_tactics(s, club.club_uid)
+            except fmsave.FmsaveError:  # a tactic layout this fmsave can't read: infer the shape as before
+                tactics = []
+            if tactics:
+                info.update(formation=tactics[0]["in_possession"], tactics=tactics)
+            else:
+                squad = {p.uid for p in s.players() if p.club_uid == club.club_uid}
+                info["formation"] = infer_formation(m for m in s.player_match_stats() if m.player_uid in squad)
             with open(os.path.join(out_dir, "club.json"), "w") as f:
-                json.dump({"club_uid": club.club_uid, "club_name": club.club_name, "formation": formation}, f)
+                json.dump(info, f)
     with open(os.path.join(out_dir, "club_gender.csv"), "w", newline="") as f:
         w = csv.writer(f); w.writerow(["club_uid", "gender"]); w.writerows(lab.items())
     with open(os.path.join(out_dir, "club_league.csv"), "w", newline="") as f:
@@ -387,6 +415,14 @@ STAT_SUMS = ["starts", "substitute_appearances", "minutes", "goals", "assists", 
              "clean_sheets", "goals_allowed", "shots_on_target_faced", "saves_held", "saves_parried", "saves_tipped", "expected_goals_prevented"]
 
 
+def _stats_csv(path):
+    """read_csv_auto over the season stats, with every stat column numeric: a column the save leaves empty for every
+    player (FM27's pressures, which fmsave can't read yet) would otherwise come out VARCHAR and break sum()."""
+    cols = con().execute(f"DESCRIBE SELECT * FROM read_csv_auto('{path}', sample_size=-1)").fetchall()
+    empty = {c: "DOUBLE" for c, t, *_ in cols if t == "VARCHAR" and c in STAT_SUMS + ["average_rating", "rated_appearances"]}
+    return f"read_csv_auto('{path}', sample_size=-1{', types=' + repr(empty) if empty else ''})"
+
+
 def _stats_sql(path):
     sums = ", ".join(f"sum({c}) AS s_{c}" for c in STAT_SUMS)
     p90 = lambda e: f"round(({e}) * 90.0 / nullif(s_minutes, 0), 2)"
@@ -397,7 +433,7 @@ def _stats_sql(path):
                           sum(minutes * r.rep) / nullif(sum(minutes) FILTER (WHERE r.rep IS NOT NULL), 0) AS s_league_rep,
                           -- the league where he played most minutes
                           arg_max(cl.league_id, minutes) FILTER (WHERE cl.league_id IS NOT NULL) AS s_league_id
-                   FROM read_csv_auto('{path}', sample_size=-1)
+                   FROM {_stats_csv(path)}
                         LEFT JOIN (SELECT club_uid, max(club_reputation) AS rep FROM raw GROUP BY 1) r USING (club_uid)
                         LEFT JOIN cl USING (club_uid)
                    GROUP BY player_uid),
@@ -1222,12 +1258,12 @@ def tracked_path():
     return data_dir() / "tracked.json"
 
 
-def track_save(src):
+def track_save(src, game="FM26"):
     if src is None:
         tracked_path().unlink(missing_ok=True)
         return
     st = Path(src).stat()
-    tracked_path().write_text(json.dumps({"name": Path(src).name, "mtime": st.st_mtime, "size": st.st_size,
+    tracked_path().write_text(json.dumps({"name": Path(src).name, "game": game, "mtime": st.st_mtime, "size": st.st_size,
                                           "club_uid": CLUB and CLUB["club_uid"], "game_date": str(GAME_DATE)}))
     WATCH["seen"].clear()
 
@@ -1259,20 +1295,21 @@ def save_watch():
         t = json.loads(tracked_path().read_text())
     except (OSError, ValueError):
         return {}
-    saves = list_saves() or []
+    folder = saves_dir(t.get("game", "FM26"))  # trackers written before FM27 support have no game: FM26
+    saves = list_saves(folder) or []
     cur = next((r for r in saves if r["name"] == t["name"]), None)
     if cur and (cur["mtime"], cur["size"]) != (t["mtime"], t["size"]) and _stable(t["name"], (cur["mtime"], cur["size"])):
-        return {"changed": t["name"]}
+        return {"changed": t["name"], "game": t.get("game", "FM26")}
     for r in saves:  # newest first: a newer save of the same career under another name
         if r["mtime"] <= t["mtime"] or r["name"] == t["name"] or not _stable(r["name"], (r["mtime"], r["size"])):
             continue
-        c = _club_of(resolve_save(r["name"]), r["mtime"])
+        c = _club_of(resolve_save(r["name"], folder), r["mtime"])
         if c and t.get("club_uid") and c[0] == t["club_uid"]:
-            return {"newer": r["name"], "club": c[1], "game_date": c[2]}
+            return {"newer": r["name"], "club": c[1], "game_date": c[2], "game": t.get("game", "FM26")}
     return {}
 
 
-def ingest(src, tracked=False):
+def ingest(src, tracked=False, game="FM26"):
     """Extract a .fm save and make it the only loaded data. One at a time; failures keep the old data."""
     global STATUS
     if not _ingest_lock.acquire(blocking=False):
@@ -1299,7 +1336,7 @@ def ingest(src, tracked=False):
         STATUS = "ready"
         telemetry.record("save_loaded")
         snapshot(Path(src).name)
-        track_save(src if tracked else None)
+        track_save(src if tracked else None, game)
         return {"rows": con().execute("SELECT count(*) FROM players").fetchone()[0], "game_date": GAME_DATE}
     finally:
         _ingest_lock.release()
@@ -1318,15 +1355,34 @@ def upload(file: UploadFile = File(...)):  # fallback picker: the browser sends 
 
 class SaveReq(BaseModel):
     name: str
+    game: str = "FM26"
+
+
+def _save_path(name, game):
+    try:
+        return resolve_save(name, saves_dir(game))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 @app.post("/api/load-save")
 def load_save(q: SaveReq):
+    return ingest(_save_path(q.name, q.game), tracked=True, game=q.game)
+
+
+@app.get("/api/save-info")
+def save_info(name: str, game: str = "FM26", club: bool = False):
+    """The picker's side panel: game and in-game date read from the header at once; the managed club (club=1)
+    takes a few seconds, so the page asks for it in a second call."""
     try:
-        src = resolve_save(q.name)
-    except ValueError as e:
+        with fmsave.open(str(_save_path(name, game))) as s:
+            out = {"game": s.info.game, "game_date": str(s.info.game_date)}
+            if club:
+                mc = next(iter(s.managed_clubs()), None)
+                out["club"] = mc and mc.club_name
+            return out
+    except fmsave.FmsaveError as e:
         raise HTTPException(400, str(e))
-    return ingest(src, tracked=True)
 
 
 @app.get("/api/status")
@@ -1350,8 +1406,11 @@ def update():
 
 @app.get("/api/saves")
 def saves():
-    s = list_saves()
-    return {"folder_found": s is not None, "saves": s or []}
+    out = []
+    for g in GAMES:
+        s = list_saves(saves_dir(g))
+        out.append({"game": g, "folder": str(saves_dir(g)), "folder_found": s is not None, "saves": s or []})
+    return {"games": out}
 
 
 class Consent(BaseModel):

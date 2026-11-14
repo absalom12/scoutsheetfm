@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 def scout(tmp_path, monkeypatch):
     monkeypatch.setenv("SCOUTSHEET_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("SCOUTSHEET_SAVES_DIR", str(tmp_path / "saves"))
-    (tmp_path / "saves").mkdir()
+    (tmp_path / "saves" / "Football Manager 26" / "games").mkdir(parents=True)
     import app
     monkeypatch.setattr(app, "STATUS", "empty")
     return app
@@ -44,11 +44,24 @@ def test_status_reports_progress_while_busy(scout, client):
 
 
 def test_saves_lists_and_reports_missing_folder(scout, client, tmp_path, monkeypatch):
-    (tmp_path / "saves" / "Chantilly (v02).fm").write_bytes(b"x")
-    d = client.get("/api/saves").json()
-    assert d["folder_found"] and [s["name"] for s in d["saves"]] == ["Chantilly (v02).fm"]
+    (tmp_path / "saves" / "Football Manager 26" / "games" / "Chantilly (v02).fm").write_bytes(b"x")
+    g = {x["game"]: x for x in client.get("/api/saves").json()["games"]}
+    assert list(g) == ["FM27", "FM26"]  # tab order
+    assert g["FM26"]["folder_found"] and [s["name"] for s in g["FM26"]["saves"]] == ["Chantilly (v02).fm"]
+    assert not g["FM27"]["folder_found"] and g["FM27"]["saves"] == [] and g["FM27"]["folder"].endswith("games")
     monkeypatch.setenv("SCOUTSHEET_SAVES_DIR", str(tmp_path / "nope"))
-    assert client.get("/api/saves").json() == {"folder_found": False, "saves": []}
+    assert not any(x["folder_found"] for x in client.get("/api/saves").json()["games"])
+
+
+def test_load_save_reads_the_chosen_game_folder(scout, client, tmp_path, monkeypatch):
+    fm27 = tmp_path / "saves" / "Football Manager 27" / "games"; fm27.mkdir(parents=True)
+    (fm27 / "como.fm").write_bytes(b"x")
+    got = []
+    monkeypatch.setattr(scout, "ingest", lambda src, tracked=False, game="FM26": got.append((pathlib.Path(src).parent, game)) or {})
+    assert client.post("/api/load-save", json={"name": "como.fm"}).status_code == 400  # FM26 folder by default
+    assert client.post("/api/load-save", json={"name": "como.fm", "game": "FM27"}).status_code == 200
+    assert got == [(fm27.resolve(), "FM27")]
+    assert client.post("/api/load-save", json={"name": "como.fm", "game": "FM24"}).status_code == 400
 
 
 @pytest.mark.parametrize("name", ["../x.fm", "x.txt", "missing.fm", ""])
@@ -57,7 +70,7 @@ def test_load_save_rejects_bad_names(client, name):
 
 
 def test_load_save_success_replaces_data(scout, client, tmp_path, monkeypatch):
-    (tmp_path / "saves" / "a.fm").write_bytes(b"x")
+    (tmp_path / "saves" / "Football Manager 26" / "games" / "a.fm").write_bytes(b"x")
     data = tmp_path / "data"; data.mkdir()
     (data / "club.json").write_text("stale")
 
@@ -77,7 +90,7 @@ def test_load_save_success_replaces_data(scout, client, tmp_path, monkeypatch):
 
 
 def test_load_save_invalid_save_keeps_previous_data(scout, client, tmp_path, monkeypatch):
-    (tmp_path / "saves" / "bad.fm").write_bytes(b"not a save")
+    (tmp_path / "saves" / "Football Manager 26" / "games" / "bad.fm").write_bytes(b"not a save")
     data = tmp_path / "data"; data.mkdir()
     (data / "all_world_players.csv").write_text("old")
     scout.STATUS = "ready"
@@ -93,7 +106,7 @@ def test_load_save_invalid_save_keeps_previous_data(scout, client, tmp_path, mon
 
 
 def test_load_save_busy_returns_409(scout, client, tmp_path):
-    (tmp_path / "saves" / "a.fm").write_bytes(b"x")
+    (tmp_path / "saves" / "Football Manager 26" / "games" / "a.fm").write_bytes(b"x")
     assert scout._ingest_lock.acquire(blocking=False)
     try:
         r = client.post("/api/load-save", json={"name": "a.fm"})
@@ -440,23 +453,23 @@ def test_history_snapshots_per_career_and_date(squad, client, monkeypatch):
 
 def test_save_watch_reports_only_a_finished_write(scout, client, tmp_path, monkeypatch):
     import json, os
-    saves = tmp_path / "saves"
+    saves = tmp_path / "saves" / "Football Manager 27" / "games"; saves.mkdir(parents=True)
     (saves / "career.fm").write_bytes(b"v1")
     monkeypatch.setattr(scout, "CLUB", {"club_uid": 7, "club_name": "Us", "formation": []})
-    scout.track_save(saves / "career.fm")
+    scout.track_save(saves / "career.fm", "FM27")
     assert client.get("/api/save-watch").json() == {}
     (saves / "career.fm").write_bytes(b"v2 longer")  # FM saved again
     os.utime(saves / "career.fm", (2e9, 2e9))
     assert client.get("/api/save-watch").json() == {}  # first sight: may still be writing
-    assert client.get("/api/save-watch").json() == {"changed": "career.fm"}
+    assert client.get("/api/save-watch").json() == {"changed": "career.fm", "game": "FM27"}
     # a newer save of another club is ignored; of the same club, offered
     for name, club in (("other.fm", (9, "Them", "2027-01-01")), ("career 2.fm", (7, "Us", "2027-02-01"))):
         (saves / name).write_bytes(b"x")
         os.utime(saves / name, (2.1e9, 2.1e9))
         scout.WATCH["club"][(name, 2.1e9)] = club
-    scout.track_save(saves / "career.fm")
+    scout.track_save(saves / "career.fm", "FM27")
     client.get("/api/save-watch")
-    assert client.get("/api/save-watch").json() == {"newer": "career 2.fm", "club": "Us", "game_date": "2027-02-01"}
+    assert client.get("/api/save-watch").json() == {"newer": "career 2.fm", "club": "Us", "game_date": "2027-02-01", "game": "FM27"}
     scout.track_save(None)
     assert client.get("/api/save-watch").json() == {}
 
@@ -465,3 +478,30 @@ def test_roles_weigh_preferred_attributes_half(scout):
     w = scout.ROLES["centre_back"][2]
     assert w["marking"] == 1 and w["pace"] == 0.5 and w["aggression"] == 0.5
     assert set(scout.ROLE_SECONDARY) == set(scout.ROLES)  # every role has its second tier
+
+
+def test_read_tactics_first_team_active_first_with_xi(scout):
+    from types import SimpleNamespace as N
+    pos = lambda *bits: [(N(raw=b),) for b in bits]  # one position per slot, as fmsave's TacticSlot holds it
+    shape = [0, 2, 4, 4, 3, 7, 10, 10, 11, 12, 14]  # bit numbers: GK DR DC DC DL DM MC MC AMR AML ST
+    slot = lambda ip, oop: N(in_possession_positions=ip, out_of_possession_positions=oop)
+    tac = lambda index, team_slot, name: N(club_uid=1, team_slot=team_slot, index=index, name=name, style_name="S",
+                                           mentality=N(label=N(name="BALANCED")),
+                                           slots=[slot(a, b) for a, b in zip(pos(*shape), pos(*shape[:5], 13, 7, 10, 11, 12, 14))])
+    s = N(tactics=lambda: [tac(1, 0, "B"), tac(0, 1, "Reserves"), tac(0, 0, "A")],
+          selections=lambda: [N(club_uid=1, team_slot=0, substitute=False, slot=i, player_uid=100 + i) for i in range(11)]
+                             + [N(club_uid=1, team_slot=0, substitute=True, slot=0, player_uid=999)])
+    t = scout.read_tactics(s, 1)
+    assert [x["name"] for x in t] == ["A", "B"]  # reserves' tactic left out, active (index 0) first
+    assert t[0]["in_possession"] == ["GK", "DR", "DC", "DC", "DL", "DM", "MC", "MC", "AMR", "AML", "ST"]
+    assert t[0]["out_of_possession"][5:7] == ["AMC", "DM"] and t[0]["mentality"] == "balanced"
+    assert t[0]["xi"] == list(range(100, 111)) and "xi" not in t[1]
+    assert scout.read_tactics(N(tactics=lambda: [], selections=lambda: []), 1) == []
+
+
+def test_stats_csv_reads_an_empty_stat_column_as_numeric(scout, tmp_path):
+    f = tmp_path / "season_stats.csv"
+    f.write_text("player_uid,minutes,pressures_completed\n1,900,\n2,450,\n")  # FM27: fmsave leaves pressures empty
+    types = dict(scout.con().execute(f"DESCRIBE SELECT * FROM {scout._stats_csv(f)}").fetchall()[i][:2] for i in range(3))
+    assert types["pressures_completed"] == "DOUBLE" and types["minutes"] == "BIGINT"
+    assert scout.con().execute(f"SELECT sum(pressures_completed) FROM {scout._stats_csv(f)}").fetchone() == (None,)

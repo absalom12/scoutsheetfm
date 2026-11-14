@@ -33,11 +33,18 @@ def _documents_dir() -> Path:
     return Path.home() / "Documents"
 
 
-def saves_dir() -> Path:
+GAMES = {"FM27": "Football Manager 27", "FM26": "Football Manager 26"}  # tab order in the save picker
+
+
+def saves_dir(game="FM26") -> Path:
+    """The game's own save folder. SCOUTSHEET_SAVES_DIR replaces the "Sports Interactive" folder (tests)."""
+    if game not in GAMES:
+        raise ValueError("unknown game")
     if env := os.environ.get("SCOUTSHEET_SAVES_DIR"):
-        return Path(env)
-    base = Path.home() / "Library" / "Application Support" if sys.platform == "darwin" else _documents_dir()
-    return base / "Sports Interactive" / "Football Manager 26" / "games"
+        base = Path(env)
+    else:
+        base = (Path.home() / "Library" / "Application Support" if sys.platform == "darwin" else _documents_dir()) / "Sports Interactive"
+    return base / GAMES[game] / "games"
 
 
 def list_saves(folder=None):
