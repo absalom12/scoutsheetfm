@@ -372,7 +372,7 @@ def extract(save_path, out_dir, players=True):
 
 GAME_DATE = CLUB = None
 # FM database id -> league name, for the main men's leagues (the save stores no competition names). Others read
-# "<Nation> · Tier N". ponytail: hand list, extend it when players ask for a league by name.
+# "<Nation> - Tier N". ponytail: hand list, extend it when players ask for a league by name.
 LEAGUE_NAMES = {11: "Premier League", 12: "Championship", 13: "League One", 67: "La Liga", 68: "LaLiga Hypermotion", 32: "Serie A",
                 33: "Serie B", 22: "Bundesliga", 23: "2. Bundesliga", 16: "Ligue 1", 17: "Ligue 2", 29: "Eredivisie", 30: "Eerste Divisie",
                 84: "Liga MX", 60: "Liga Portugal", 74: "Liga Profesional", 45: "Scottish Premiership", 130486: "Russian Premier League",
@@ -403,7 +403,7 @@ def league_keys(rows):
         k = keyed[x[0]]
         tier = 1 + sum(1 for k2, v in lv.items() if v > lv[k] and home[k2] == home[k])
         name = LEAGUE_NAMES.get(x[1]) if x[3] != "Women" and k.startswith("db") else None
-        out[x[0]] = (k, name or f"{x[2] or 'Unknown'} · Tier {tier}{' · Women' if x[3] == 'Women' else ''}")
+        out[x[0]] = (k, name or f"{x[2] or 'Unknown'} - Tier {tier}{' - Women' if x[3] == 'Women' else ''}")
     return out
 # Season totals (OVERALL rows summed over every team the player turned out for this season).
 STAT_SUMS = ["starts", "substitute_appearances", "minutes", "goals", "assists", "expected_goals", "expected_assists",
@@ -948,16 +948,16 @@ PRESETS = {
     "ball_winners": ("Form", "Ball winners", "Tackles + interceptions per 90, 900+ min", "s_minutes >= 900", "s_def_actions_p90 DESC", "season"),
     "young_breakout": ("Form", "Young breakouts", "Age ≤ 21, 900+ min, rating ≥ 7.0", "age <= 21 AND s_minutes >= 900 AND s_avg_rating >= 7.0", "s_avg_rating DESC", "season"),
     # Deal Finder lenses: % under the fair fee, weighted by quality so £5k nobodies don't win on ratio alone.
-    "deals_ability": ("Deals", "Best deals · Ability", "CA/PA vs value", "deal_ability IS NOT NULL AND transfer_value > 0 AND (ability_current >= 90 OR ability_potential >= 130)",
+    "deals_ability": ("Deals", "Best deals - Ability", "CA/PA vs value", "deal_ability IS NOT NULL AND transfer_value > 0 AND (ability_current >= 90 OR ability_potential >= 130)",
                       "deal_ability * (ability_current + ability_potential) DESC", "deals"),
-    "deals_attributes": ("Deals", "Best deals · Attributes", "Role score vs value", "deal_attributes IS NOT NULL AND transfer_value > 0 AND best_role_score >= 55",
+    "deals_attributes": ("Deals", "Best deals - Attributes", "Role score vs value", "deal_attributes IS NOT NULL AND transfer_value > 0 AND best_role_score >= 55",
                          "deal_attributes * best_role_score DESC", "deals"),
-    "deals_form": ("Deals", "Best deals · Form", "Season rating vs value, 900+ min", "deal_form IS NOT NULL AND transfer_value > 0 AND stat_score >= 40",
+    "deals_form": ("Deals", "Best deals - Form", "Season rating vs value, 900+ min", "deal_form IS NOT NULL AND transfer_value > 0 AND stat_score >= 40",
                    "deal_form * s_avg_rating DESC", "deals"),
-    "deals_stats": ("Deals", "Best deals · Performance", "Stats-only performance index vs value, 900+ min", "deal_stats IS NOT NULL AND transfer_value > 0 AND stat_score >= 40",
+    "deals_stats": ("Deals", "Best deals - Performance", "Stats-only performance index vs value, 900+ min", "deal_stats IS NOT NULL AND transfer_value > 0 AND stat_score >= 40",
                     "deal_stats * stat_score DESC", "deals"),
     # fair_fee is the mode's own valuation, so ln(fair_fee) is a mode-neutral quality weight.
-    "deals_blend": ("Deals", "Best deals · Blend", "Every lens your data mode allows vs value", "deal_score IS NOT NULL AND transfer_value > 0 AND fair_fee >= 100000",
+    "deals_blend": ("Deals", "Best deals - Blend", "Every lens your data mode allows vs value", "deal_score IS NOT NULL AND transfer_value > 0 AND fair_fee >= 100000",
                     "deal_score * ln(fair_fee) DESC", "deals"),
 }
 for r, (name, _, _) in ROLES.items():
@@ -1728,7 +1728,7 @@ def targets(q: TargetQuery, rep, slots, per_pos, min_rating, extra_where=""):
             if wage > 1.5 * wage_ref:
                 bits.append(f"wage £{wage / 1000:.1f}k/w is {wage / wage_ref:.1f}× your XI median")
             row.update(target_pos=pos, target_slot_index=s["slot_index"], upgrade=up, replaces=s["starter"],
-                       reason=" · ".join(bits))
+                       reason=", ".join(bits))
             rows.append(row)
     best = {}
     for r in sorted(rows, key=lambda r: -r["score"]):

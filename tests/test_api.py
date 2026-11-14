@@ -401,9 +401,9 @@ def test_league_keys_name_merge_and_fall_back(scout):
     k = scout.league_keys(rows)
     assert k[1] == ("db29-Men", "Eredivisie") and k[2] == ("db30-Men", "Eerste Divisie")
     assert k[3] == k[4] == ("db74-Men", "Liga Profesional")
-    assert k[5] == ("db130284-Men", "Süper Lig") and k[6] == ("t6", "Türkiye · Tier 2")
-    assert k[7] == ("t7", "Croatia · Tier 1") and k[8] == ("t8", "Australia · Tier 1")
-    assert k[9] == ("db2000148115-Women", "Germany · Tier 1 · Women")
+    assert k[5] == ("db130284-Men", "Süper Lig") and k[6] == ("t6", "Türkiye - Tier 2")
+    assert k[7] == ("t7", "Croatia - Tier 1") and k[8] == ("t8", "Australia - Tier 1")
+    assert k[9] == ("db2000148115-Women", "Germany - Tier 1 - Women")
 
 
 def test_club_leagues_ignore_reserve_sides(scout):
