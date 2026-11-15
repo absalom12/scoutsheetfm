@@ -624,12 +624,14 @@ def add_stat_roles():
                                  f"(SELECT gender, {vals} FROM players WHERE stat_group = '{g}' AND s_minutes >= {PERF_MIN}) GROUP BY 1").fetchall():
             STAT_Q.update({(row[0], g, k): q for k, q in zip(ks, row[1:])})
         qcols = ", ".join(f"quantile_cont(m_{k}, {pts}) AS q_{k}" for k in ks)
-        score = lambda r: " + ".join(f"{w} * {_pct_sql('m_' + k, 'q_' + k, ROLE_STATS[k][3])}" for k, w in STAT_ROLES[r].items())
+        # Weighted mean over the stats the save has: a stat it does not store (FM27 pressures) is left out, not counted as 0.
+        score = lambda r: ("(" + " + ".join(f"CASE WHEN m_{k} IS NULL THEN 0 ELSE {w} * {_pct_sql('m_' + k, 'q_' + k, ROLE_STATS[k][3])} END" for k, w in STAT_ROLES[r].items())
+                           + ") / nullif(" + " + ".join(f"CASE WHEN m_{k} IS NULL THEN 0 ELSE {w} END" for k, w in STAT_ROLES[r].items()) + ", 0)")
         pos = ", ".join(sorted({f"positions_{p}" for r in roles for p in ROLES[r][1]}))
         joins.append(f"""LEFT JOIN (
             WITH v AS (SELECT uid, gender, stat_group, s_minutes, {pos}, {vals} FROM players WHERE s_minutes >= {PERF_MIN}),
                  q AS (SELECT gender, {qcols} FROM v WHERE stat_group = '{g}' GROUP BY 1)
-            SELECT uid, {', '.join(f'CASE WHEN greatest({role_pos_sql(r)}, 0) >= 15 THEN round(({score(r)}) / {sum(STAT_ROLES[r].values())}, 1) END AS srole_{r}' for r in roles)}
+            SELECT uid, {', '.join(f'CASE WHEN greatest({role_pos_sql(r)}, 0) >= 15 THEN round({score(r)}, 1) END AS srole_{r}' for r in roles)}
             FROM v JOIN q ON q.gender IS NOT DISTINCT FROM v.gender) USING (uid)""")
     con().execute("CREATE OR REPLACE TABLE players AS SELECT * FROM players " + " ".join(joins))
 
@@ -652,6 +654,8 @@ def stat_roles(p):
             q, low = STAT_Q.get((p.get("gender"), g, k)), ROLE_STATS[k][3]
             lim = q[100 - ROLE_LIMIT_PCT if low else ROLE_LIMIT_PCT] if q else None
             v = vals[k]
+            if v is None:  # a stat the save does not store (FM27 pressures): no row, rather than a 0
+                continue
             out[r].append({"stat": k, "weight": w, "value": None if v is None else round(float(v), 3),
                            "pct": stat_pct(v, q, low), "limit": None if lim is None else round(float(lim), 3)})
     return out
