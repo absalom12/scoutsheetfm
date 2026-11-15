@@ -1436,6 +1436,7 @@ dialog.es.set { width: min(660px, calc(100vw - 32px)); height: auto; max-height:
     <header class="es-head"><h2 id="setTitle">Settings</h2><button type="button" class="icon-btn" data-set-close aria-label="Close">×</button></header>
     <div class="es-body">
     <section class="es-sec"><h3 data-n="01">Display <small>applied when you close this window</small></h3>
+      <div class="set-row"><span>Language</span><div class="seg" role="group" aria-label="Language" data-no-i18n><button type="button" data-set="lang" data-v="en" lang="en">English</button><button type="button" data-set="lang" data-v="fr" lang="fr">Français</button><button type="button" data-set="lang" data-v="es" lang="es">Español</button><button type="button" data-set="lang" data-v="pt" lang="pt-BR">Português</button></div></div>
       <div class="set-row"><span>Currency<small>€ and $ use approximate rates</small></span><div class="seg" role="group" aria-label="Currency"><button type="button" data-set="cur" data-v="GBP">£ Pound</button><button type="button" data-set="cur" data-v="EUR">€ Euro</button><button type="button" data-set="cur" data-v="USD">$ Dollar</button></div></div>
       <div class="set-row"><span>Wages<small>Search filters stay in £ per week</small></span><div class="seg" role="group" aria-label="Wages"><button type="button" data-set="per" data-v="w">/week</button><button type="button" data-set="per" data-v="m">/month</button><button type="button" data-set="per" data-v="y">/year</button></div></div>
       <div class="set-row"><span>Height</span><div class="seg" role="group" aria-label="Height"><button type="button" data-set="height" data-v="cm">188 cm</button><button type="button" data-set="height" data-v="ftin">6'2"</button></div></div>
@@ -1622,17 +1623,82 @@ const CURRENCIES = { GBP: ['£', 1], EUR: ['€', 1.157], USD: ['$', 1.3] };
 const PERIODS = { w: ['/w', 1], m: ['/m', 52 / 12], y: ['/y', 52] };
 // Settings dialog choices, per browser: [default, allowed values]. A change reloads the page so every label re-renders.
 const SETTINGS = { cur: ['GBP', Object.keys(CURRENCIES)], per: ['w', Object.keys(PERIODS)], height: ['cm', ['cm', 'ftin']],
-  nat: ['flag', ['flag', 'name']], density: ['comfy', ['comfy', 'compact']], updates: ['on', ['on', 'off']] };
+  nat: ['flag', ['flag', 'name']], density: ['comfy', ['comfy', 'compact']], updates: ['on', ['on', 'off']],
+  lang: [(l => ['fr', 'es', 'pt'].includes(l) ? l : 'en')((navigator.language || 'en').slice(0, 2).toLowerCase()), ['en', 'fr', 'es', 'pt']] };
 const SET = {};
 for (const [k, [def, ok]] of Object.entries(SETTINGS)) { let v = null; try { v = localStorage.getItem('fm26_' + k); } catch {} SET[k] = ok.includes(v) ? v : def; }
 const CUR = SET.cur, PER = SET.per;
+// ---------- Languages ----------
+// One dictionary per language, English source text -> translation (static/i18n/<lang>.json); English is the fallback.
+// Plain labels (buttons, tabs, headings, attribute and position names) are translated where they land in the page:
+// every text node and title / placeholder / aria-label whose whole text is a key. Sentences with numbers go through
+// t('... {n} ...', { n }) where they are built. Loaded synchronously so the first paint is already translated.
+const LANG = SET.lang, LOCALE = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', pt: 'pt-BR' }[SET.lang];  // dates follow the app language
+document.documentElement.lang = LANG;
+const I18N = LANG === 'en' ? {} : (() => { try { const x = new XMLHttpRequest(); x.open('GET', `/i18n/${LANG}.json`, false); x.send(); return x.status === 200 ? JSON.parse(x.responseText) : {}; } catch { return {}; } })();
+const I18N_MISS = new Set();  // dev aid: localStorage fm26_i18n_debug = 1 collects untranslated text seen on screen
+const I18N_DEBUG = (() => { try { return LANG !== 'en' && localStorage.getItem('fm26_i18n_debug') === '1'; } catch { return false; } })();
+const t = (s, v) => { const r = I18N[s] ?? s; return v ? r.replace(/\{(\w+)\}/g, (m, k) => k in v ? v[k] : m) : r; };
+// Keys with {placeholders} ("{n} under fair value") match dynamic text; each captured part is translated again when it
+// is itself a key (a role, a position). More literal text first, so the most specific pattern wins.
+const I18N_PAT = Object.keys(I18N).filter(k => /\{\w+\}/.test(k)).map(k => {
+  const names = [...k.matchAll(/\{(\w+)\}/g)].map(m => m[1]);
+  const re = new RegExp('^' + k.split(/\{\w+\}/).map(x => x.replace(/[.*+?^$()|[\]\\]/g, '\\$&')).join('(.+?)') + '$');
+  return [re, names, I18N[k], k.replace(/\{\w+\}/g, '').length];
+}).sort((a, b) => b[3] - a[3]);
+const trText = k => {
+  if (I18N[k] != null) return I18N[k];
+  for (const [re, names, out] of I18N_PAT) {
+    const m = k.match(re); if (!m) continue;
+    const parts = m.slice(1).map(v => I18N[v] ?? trText(v) ?? v);
+    // an untranslated part that reads as English prose (a common English word) would leave a half-translated line: skip
+    if (parts.some((v, i) => v === m[i + 1] && /\b(the|of|his|her|and|to|in|at|on|for|with|than|is|are|be|per|under|over|from|by|an|as|no|not|or|it|left|years?|yrs|players?)\b/.test(v))) continue;
+    return out.replace(/\{(\w+)\}/g, (x, n) => { const i = names.indexOf(n); return i < 0 ? x : parts[i]; });
+  }
+  return null;
+};
+// fr / es / pt write decimals with a comma (4.9 -> 4,9; version numbers like 0.6.0 keep their dots) and dates day first
+// (2026-07-20 -> 20/07/2026)
+const decComma = s => s.replace(/(?<![\d.])(\d+)\.(\d+)(?![\d.])/g, '$1,$2').replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1');
+const I18N_SKIP = 'script,style,textarea,input,[data-no-i18n],.pname,.ag-cell[col-id="name"],.ag-cell[col-id="club_name"]';
+// Text this code has just written is never translated again: a translation can match a pattern itself (": " in French).
+const I18N_DONE = new WeakMap();  // node -> text (or attribute name -> value) we set
+function trAttr(el, a) {
+  const k = el.getAttribute(a)?.trim(); if (!k) return;
+  const done = I18N_DONE.get(el); if (done?.[a] === k) return;
+  const tr = trText(k), v = decComma(tr ?? k); if (tr == null && I18N_DEBUG && /[a-z]{2}/.test(k)) I18N_MISS.add('@' + k);
+  if (v !== k) { el.setAttribute(a, v); I18N_DONE.set(el, { ...done, [a]: v }); }
+}
+function trNode(n) {
+  if (n.nodeType === 3) {
+    const raw = n.nodeValue, k = raw.trim();
+    if (!k || I18N_DONE.get(n) === raw || !/[A-Za-z]|\d\.\d|\d{4}-\d\d-\d\d/.test(k) || n.parentElement?.closest(I18N_SKIP)) return;
+    const tr = trText(k), v = decComma(tr ?? k);
+    if (tr == null && I18N_DEBUG) I18N_MISS.add(k);
+    if (v !== k) { n.nodeValue = raw.replace(k, v); I18N_DONE.set(n, n.nodeValue); }
+    return;
+  }
+  if (n.nodeType !== 1) return;
+  const skip = n.matches(I18N_SKIP); if (skip && n.matches('script,style')) return;  // names and field values stay, their labels translate
+  for (const a of ['title', 'placeholder', 'aria-label']) trAttr(n, a);
+  if (skip) return;
+  for (const c of n.childNodes) trNode(c);
+}
+if (LANG !== 'en') {
+  trNode(document.body);
+  new MutationObserver(ms => { for (const m of ms) {
+    if (m.type === 'characterData') trNode(m.target);
+    else if (m.type === 'attributes') trAttr(m.target, m.attributeName);
+    else m.addedNodes.forEach(trNode);
+  } }).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['title', 'placeholder', 'aria-label'] });
+}
 const height = cm => SET.height === 'cm' ? `${cm} cm` : (i => `${Math.floor(i / 12)}'${i % 12}"`)(Math.round(cm / 2.54));
 const curSym = () => CURRENCIES[CUR][0], wageK = () => CURRENCIES[CUR][1] * PERIODS[PER][1];
 const money = v => { if (v == null) return 'n/a'; v *= CURRENCIES[CUR][1]; return curSym() + (v >= 1e6 ? `${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1)}M` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : Math.round(v)); };
-const wage = v => { if (v == null) return 'n/a'; v *= wageK(); return curSym() + (v >= 1e6 ? `${+(v / 1e6).toFixed(1)}M` : v >= 1e5 ? `${Math.round(v / 1e3)}k` : v >= 1e3 ? `${+(v / 1e3).toFixed(1)}k` : Math.round(v)) + PERIODS[PER][0]; };
+const wage = v => { if (v == null) return 'n/a'; v *= wageK(); return curSym() + (v >= 1e6 ? `${+(v / 1e6).toFixed(1)}M` : v >= 1e5 ? `${Math.round(v / 1e3)}k` : v >= 1e3 ? `${+(v / 1e3).toFixed(1)}k` : Math.round(v)) + t(PERIODS[PER][0]); };
 const feeIn = v => v == null || Number.isNaN(v) ? v : Math.round(v / CURRENCIES[CUR][1]);  // typed amount -> base unit
 const wageIn = v => v == null || Number.isNaN(v) ? v : Math.round(v / wageK());
-const bare = s => s.replace(/^[£€$]|\/[wmy]$/g, '');
+const bare = s => s.replace(/^[£€$]|\/[^/]+$/g, '');
 const LABELS = { ability_current: 'CA', ability_potential: 'PA', pa_gap: 'Gap', natural_positions: 'Pos', transfer_value: 'Value',
   months_left: 'Months left', best_role: 'Best role', best_role_score: 'Best role', height_cm: 'Height', nationality: 'Nation',
   club_name: 'Club', contract_squad_status: 'Squad status', contract_end: 'Contract end', deal_ability: 'Ability deal',
@@ -1801,7 +1867,7 @@ function colDef(c) {
   if (['name', 'club_name', 'natural_positions', 'best_role', 'contract_squad_status', 'nationality'].includes(c))
     Object.assign(d, { filter: 'agTextColumnFilter', filterParams: { maxNumConditions: 1 }, width: c === 'name' ? 200 : c === 'club_name' ? 170 : c === 'nationality' ? 140 : c === 'contract_squad_status' ? 220 : 120 });
   if (c === 'name') Object.assign(d, { pinned: 'left', cellRenderer: p => !p.data ? '<span class="sk"></span>'
-    : `<span class="cell-name pname" data-profile="${p.data.uid}" role="link" tabindex="-1" title="Full profile">${esc(p.value)}</span>${CLUB && p.data.club_uid === CLUB.club_uid ? '<span class="ours">OURS</span>' : ''}` });
+    : `<span class="cell-name pname" data-profile="${p.data.uid}" role="link" tabindex="-1" title="Full profile">${esc(p.value)}</span>${CLUB && p.data.club_uid === CLUB.club_uid ? `<span class="ours">${t('OURS')}</span>` : ''}` });
   if (c === 'nationality') d.cellRenderer = p => natHTML(p.data);
   if (c === 'natural_positions') d.cellRenderer = p => posChips(p.value);
   if (c === 'best_role') d.valueFormatter = p => p.value ? label('role_' + p.value) : 'n/a';
@@ -1998,7 +2064,7 @@ function renderSummary() {
   if (st.page === 'deals') ctx = `${lens().label} lens`;
   else if (st.preset === '__shortlist') ctx = 'Your shortlist';
   else if (st.preset) { const p = META.presets.find(x => x.id === st.preset); ctx = p ? `${esc(p.label)}: ${esc(p.desc)}` : ''; }
-  $('#summary').innerHTML = `<span class="mode-chip">${MODES[MODE]}</span><b>${n}</b> players${ctx ? ', ' + ctx : ''}, <span title="In-game date of the loaded save">${esc(META.game_date || '')}</span>`;
+  $('#summary').innerHTML = `<span class="mode-chip">${MODES[MODE]}</span><b>${n}</b> <span>players</span>${ctx ? ', <span>' + ctx + '</span>' : ''}, <span title="In-game date of the loaded save">${esc(META.game_date || '')}</span>`;
   $$('.qf').forEach(el => { const k = el.dataset.q; if (document.activeElement !== el) el.value = F[k] ?? ''; el.classList.toggle('has', F[k] != null); }); capsPaint();
   $$('#positions [data-pos]').forEach(b => b.setAttribute('aria-pressed', F.positions.includes(b.dataset.pos)));
   const crit = critList();
@@ -2099,7 +2165,7 @@ const headPos = p => {
 // Tab row chips, only when one applies: suspended, on loan, in Full a low condition, and home-grown in your club's nation.
 // No sharpness chip: nearly every player is under 50% in pre-season, so it would be on every header.
 const availChips = p => {
-  const c = [], d = v => new Date(v).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  const c = [], d = v => new Date(v).toLocaleDateString(LOCALE, { month: 'short', year: 'numeric' });
   if (p.suspensions) { let s = []; try { s = JSON.parse(p.suspensions); } catch {} c.push(['bad', 'Suspended', s.map(x => x.competition_name || (x.scope === 'nation' ? 'internationals' : x.scope)).filter(Boolean).join(', ')]); }
   if (p.on_loan) c.push(['warn', `On loan${p.loan_end ? ' to ' + d(p.loan_end) : ''}`, `On loan${p.loan_parent_club_name ? ' from ' + p.loan_parent_club_name : ''}${p.loan_end ? ' until ' + d(p.loan_end) : ''}`]);
   if (MODE === 'full' && p.raw_condition != null && p.raw_condition < 8500) c.push(['warn', `Condition ${Math.round(p.raw_condition / 100)}%`, 'Physical condition, 100% = fully fit']);
@@ -2450,7 +2516,7 @@ const bestPos = (p, g) => (Array.isArray(g) ? g : GRP_POS[g] || []).map(k => [k,
 // FM26 roles: the positions each is played from (grid names) and their groups, e.g. Advanced Playmaker = AM/CM.
 const rolePos = r => (META.role_pos?.[r] || []).map(k => k === 'stc' ? 'ST' : k.toUpperCase());
 const POS_GRP = Object.fromEntries(Object.entries(GRP_POS).flatMap(([g, ks]) => ks.map(k => [k, g])));
-const roleTag = r => [...new Set(rolePos(r).map(k => POS_GRP[k]))].join('/');
+const roleTag = r => [...new Set(rolePos(r).map(k => t(POS_GRP[k])))].join('/');
 const canPlay = (p, r) => rolePos(r).some(k => (p[posKey(k)] ?? 0) >= 15);
 // Role picker: the roles his positions (15+) allow first, every other role under "Other positions".
 function roleSelect(roles, role, p) {
@@ -2468,7 +2534,7 @@ function secFit() {
   const cover = POSITIONS.map(k => [k, p[posKey(k)]]).filter(x => x[1] >= 12 && x[1] < 15);
   const row = ([r, x]) => { const [pk, pv] = bestPos(p, rolePos(r)), f = famil(pv), untrained = x >= 75 && pv < 12;
     return `<div class="tf-r${untrained ? ' un' : ''}"><span class="tf-n">${label('role_' + r)}</span><i class="tf-b"><i style="width:${x}%;background:${scoreColor(x)}"></i></i><b style="color:${scoreColor(x)}">${x.toFixed(0)}</b>
-      <span class="tf-p" style="--c:${f ? f[2] : C.muted}" title="${esc(`${pk} familiarity ${famTxt(pv)}`)}">${pk} ${famNum() ? pv : famTxt(pv)}</span></div>`; };
+      <span class="tf-p" style="--c:${f ? f[2] : C.muted}" title="${esc(`${pk} familiarity ${famTxt(pv)}`)}">${t(pk)} ${famNum() ? pv : famTxt(pv)}</span></div>`; };
   return `${h3i('role', 'Tactical fit', 'role fit, best position for it')}
     <div class="rs-cs tf-sum" title="${esc(FIT_RULE + ' Specialist = best role 8+ ahead of the second; flexible = 3 or less.')}">
       ${shape ? rsPill(shape[0], 'var(--mode)') + `<span class="rs-a">${shape[1]}</span>` : ''}${gk ? '' : `<span class="rs-a"><b style="color:${n75 >= 3 ? C.good : 'var(--text2)'}">${n75}</b> role${n75 === 1 ? '' : 's'} at 75+</span>`}
@@ -2701,7 +2767,7 @@ function secKpis(x = ppx) {
   out.push(k('Wage', cw == null ? 'n/a' : wage(cw), null, p.free_agent ? ['Asking, free agent', C.muted] : !FAIR || d == null ? ['Current contract', C.muted]
     : Math.abs(d) < 5 ? ['Fair wage', C.ok] : d > 0 ? [`${d}% under fair wage`, C.good] : [cw / fw >= 3 ? 'Far over fair wage' : `${-d}% over fair wage`, C.bad], 'Wage against his fair wage'));
   const ml = p.months_left, end = !p.free_agent && p.contract_end ? new Date(p.contract_end) : null;
-  out.push(k('Contract until', end && !isNaN(end) ? end.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : 'n/a', null,
+  out.push(k('Contract until', end && !isNaN(end) ? end.toLocaleDateString(LOCALE, { month: 'short', year: 'numeric' }) : 'n/a', null,
     p.free_agent ? ['No contract', C.good] : ml == null ? NA : ml <= 6 ? ['Expiring', C.bad] : ml <= 12 ? ['Final year', C.orange] : [`${leftTxt(ml).replace(' years', ' yrs')} left`, ml <= 24 ? C.ok : C.muted], 'Contract end and what is left'));
   const r = p.s_avg_rating;
   out.push(k('Avg rating', r ? r.toFixed(2) : 'n/a', r ? ratingColor(r) : C.muted,
@@ -3067,7 +3133,7 @@ const PP_FN = { dsnap: secDsnap, kpis: secKpis, hero: secHero, deal: secDeal, sg
   radar: () => profileInner(ppx.p), rarch: secArch, rvs: secVs, rfit: secFit, rmind: secMind, rrisk: secRisk, ruse: secUse, simmini: () => h3i('similar', 'Similar players', '<button class="link" data-ppgo="similar">See all →</button>') + simMini(MODE === 'moneyball' ? 7 : 3, false) };
 // Development over the snapshots ScoutSheet keeps each time this career's save is loaded (server: snapshot()).
 // series: [key, label, dashed]; one small line chart, one shared scale (CA and PA, or one measure alone).
-const dDate = d => new Date(d + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const dDate = d => new Date(d + 'T00:00').toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' });
 function histChart(title, series, fmt = v => v) {
   const h = ppx?.p?.history || [];
   if (h.length < 2) return `<div class="hist"><h4>${title}</h4><p class="note">${h.length ? `First look saved on ${dDate(h[0].date)}. Load this save again later in the season to see how he develops.`
@@ -3629,14 +3695,14 @@ function capPaint(el) {  // state -> tile, in place (a re-render would drop the 
   el.title = (c.m === 'custom' ? `Your ${name.toLowerCase()}${CAP[k][4] ? '' : ': kept when you switch slots'}. Drag to the far right for no limit`
     : c.m === 'auto' ? (age ? 'Default: veterans would otherwise top every list' : st ? `Follows ${st.name}, the ${formation[slotSel]} starter (${fmt(ref)}), slot after slot` : 'Follows the starter of the slot you pick: no limit until then')
     : `No ${name.toLowerCase()} limit${ref != null ? `. ${st.name} (${formation[slotSel]}) is on ${fmt(ref)}: Match caps it there` : ''}. Drag to set one`) + '. Click the number to type it, drag the ruler to slide';
-  if (o.textContent !== txt) { if (o.textContent) { o.classList.remove('tick'); void o.offsetWidth; o.classList.add('tick'); } o.textContent = txt; }
+  if (o.dataset.v !== txt) { if (o.dataset.v) { o.classList.remove('tick'); void o.offsetWidth; o.classList.add('tick'); } o.textContent = o.dataset.v = txt; }
   if (document.activeElement !== r || r.dataset.n !== String(n)) { r.max = n; r.dataset.n = n; } r.value = i;
   r.setAttribute('aria-valuetext', v != null ? `${txt} (${el.querySelector('i').textContent})` : 'no limit');
   // one action per state: a cap (or a waiting auto) -> no limit; no limit -> Match the starter (money, with a slot) or back to 31 (age)
   const clear = v != null || c.m === 'auto' && !age;
   x.hidden = !clear && !age && ref == null;
   x.textContent = clear ? '×' : age ? '31' : 'Match'; x.classList.toggle('x', clear);
-  x.setAttribute('aria-label', clear ? `No ${name.toLowerCase()} limit` : age ? 'Back to the default age, 31' : `Cap the ${name.toLowerCase()} at ${st?.name}'s ${f} and follow the selected slot`); x.title = x.getAttribute('aria-label');
+  x.setAttribute('aria-label', clear ? `No ${name.toLowerCase()} limit` : age ? 'Back to the default age, 31' : st ? `Cap the ${name.toLowerCase()} at ${st.name}'s ${f} and follow the selected slot` : `No ${name.toLowerCase()} limit`); x.title = x.getAttribute('aria-label');
 }
 const capsPaint = () => $$('.cap[data-capk]').forEach(capPaint);
 function capSet(k, c) {
@@ -3717,7 +3783,7 @@ function slotXY(form = formation) {
     return [Math.min(90, Math.max(10, x + (k - (n + 1) / 2) * spread)), 9 + y * .82]; });  // squeezed off the edges: a centred slot card at y 8% (ST) or 92% (GK) was clipped
 }
 const fitWord = () => basis() === 'performance' ? 'performance' : 'fit';
-const mentality = m => m ? m.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()) : '';
+const mentality = m => m ? t(m.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())) : '';
 const tacName = t => t.name.split(' - ')[0];
 // A split ring: left arc = fit with the ball, right arc = without it; the blended fit in the middle.
 const fitRing = (fin, fout, fit) => `<svg class="fring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="17" class="ring-bg"/>
@@ -4517,6 +4583,7 @@ async function init() {
     columnDefs: gridColDefs(), defaultColDef: { sortable: true, resizable: true, floatingFilter: true, suppressHeaderMenuButton: true },
     rowModelType: 'infinite', cacheBlockSize: 100, maxBlocksInCache: 60, rowHeight: SET.density === 'compact' ? 30 : 40,
     pagination: true, paginationPageSize: PAGE_SIZE, paginationPageSizeSelector: PAGE_SIZES,
+    localeText: { to: t('to'), of: t('of'), page: t('Page'), pageSizeSelectorLabel: t('Page Size:'), thousandSeparator: LANG === 'en' ? ',' : '\u202f', decimalSeparator: LANG === 'en' ? '.' : ',' },
     onPaginationChanged: e => { if (e.newPageSize) try { localStorage.setItem('fm26_page_size', grid.paginationGetPageSize()); } catch {} }, headerHeight: 36, floatingFiltersHeight: 34,
     getRowId: p => String(p.data.uid),
     overlayNoRowsTemplate: emptyState('Nobody on the teamsheet', 'No players match these filters. Loosen one or reset.', '<button class="btn" onclick="resetAll()">Reset filters</button>'),
@@ -4572,7 +4639,7 @@ $('#exportBtn').onclick = exportCSV;
 const SP = { games: [], tab: null, sel: null, fail: null, busy: false, tok: 0 };
 const spDate = t => { const d = new Date(t * 1000), z = n => String(n).padStart(2, '0');
   return `${z(d.getDate())}/${z(d.getMonth() + 1)}/${z(d.getFullYear() % 100)} - ${z(d.getHours())}:${z(d.getMinutes())}`; };
-const spMB = b => `${Math.max(1, Math.round(b / 1048576))} MB`;
+const spMB = b => `${Math.max(1, Math.round(b / 1048576))} ${t('MB')}`;
 const spGame = () => SP.games.find(g => g.game === SP.tab) || { saves: [] };
 async function openLoad() {
   const d = $('#load'); if (d.open) return; d.showModal();

@@ -1943,3 +1943,9 @@ def index():
 
 # Third-party files shipped with the app (AG Grid, fonts) so it runs offline and contacts no CDN.
 app.mount("/vendor", StaticFiles(directory=os.path.join(RES, "static", "vendor")), name="vendor")
+@app.get("/i18n/{lang}.json")
+def i18n(lang: str):
+    """UI translations, revalidated on each load so an app update never serves a stale dictionary."""
+    if lang not in ("fr", "es", "pt"):
+        raise HTTPException(404)
+    return FileResponse(os.path.join(RES, "static", "i18n", f"{lang}.json"), headers={"Cache-Control": "no-cache"})
