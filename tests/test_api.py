@@ -539,3 +539,15 @@ def test_stored_club_gender_beats_the_inference(scout):
     # an old uid with no stored code is inferred Men; a stored code wins, even against that inference
     lab = scout.club_genders([club(1, "Old FC"), club(2, "Women FC", G.WOMEN), club(3, "Academy", G.MEN)], [])
     assert lab == {1: "Men", 2: "Women", 3: "Men"}
+
+
+@pytest.mark.parametrize("body", [{"sort": [{"colId": "age"}]}, {"sort": [{"sort": "asc"}]}, {"start": -5}, {"start": 2**63},
+                                  {"filters": {"age": {"filterType": "number", "type": "greaterThan", "filter": "abc"}}},
+                                  {"filters": {"name": {"filterType": "text", "type": "contains"}}}, {"filters": {"age": 5}},
+                                  {"positions": ["XX"]}, {"gender": "Alien"}, {"home_grown": "mars"}])
+def test_bad_player_query_is_4xx(client, body):
+    assert 400 <= client.post("/api/players", json=body).status_code < 500
+
+
+def test_unknown_track_event_is_400(client):
+    assert client.post("/api/track", json={"e": "steal_data"}).status_code == 400

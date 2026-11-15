@@ -10,7 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from urllib.parse import urlsplit
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = getattr(sys, "_MEIPASS", HERE)  # bundled read-only resources (static/) when frozen
@@ -998,6 +998,58 @@ class Query(BaseModel):
     leagues: list[str] = []      # league keys ("db29-Men") or "c:<country>" (every club in that country); OR
     home_grown: str | None = None  # "club" | "nation": home-grown at the managed club / in its nation
     mode: str = "full"           # "full" | "fair" (no CA/PA/hidden) | "moneyball" (stats only)
+
+    # Bad input is a 4xx, never a 500 (test campaign 2026-11-15, BUG-03 and BUG-06).
+    @field_validator("start", "end")
+    @classmethod
+    def _page(cls, v):
+        if not 0 <= v <= 10_000_000:
+            raise ValueError("start and end must be between 0 and 10,000,000")
+        return v
+
+    @field_validator("sort")
+    @classmethod
+    def _sort(cls, v):
+        if any(not isinstance(s, dict) or not isinstance(s.get("colId"), str) or s.get("sort") not in ("asc", "desc") for s in v):
+            raise ValueError("each sort item needs colId and sort asc|desc")
+        return v
+
+    @field_validator("filters")
+    @classmethod
+    def _filters(cls, v):
+        for f in v.values():
+            if not isinstance(f, dict):
+                raise ValueError("each filter must be an object")
+            t, ft = f.get("type"), f.get("filterType")
+            if t in ("blank", "notBlank"):
+                continue
+            keys = ("dateFrom",) if ft == "date" else ("filter",)
+            if f.get(keys[0]) is None:
+                raise ValueError("filter value missing")
+            if ft == "number" and any(f.get(k) is not None and (isinstance(f[k], bool) or not isinstance(f[k], (int, float))) for k in ("filter", "filterTo")):
+                raise ValueError("number filter needs a number")
+        return v
+
+    @field_validator("gender")
+    @classmethod
+    def _gender(cls, v):
+        if v not in (None, "Men", "Women", "Unknown"):
+            raise ValueError("gender must be Men, Women or Unknown")
+        return v
+
+    @field_validator("home_grown")
+    @classmethod
+    def _hg(cls, v):
+        if v not in (None, "", "club", "nation"):
+            raise ValueError("home_grown must be club or nation")
+        return v or None
+
+    @field_validator("positions")
+    @classmethod
+    def _positions(cls, v):
+        if any(g not in POS and g not in EXACT_POS for g in v):
+            raise ValueError("unknown position")
+        return v
     fair_play: bool = False      # legacy alias for mode="fair"
     similar_to: int | None = None  # uid: with no explicit sort, closest players to him first
 
@@ -1464,8 +1516,9 @@ class Track(BaseModel):
 @app.post("/api/track")  # page events: mode switches, shortlist, visible seconds. Ignored unless the user opted in.
 def track(q: Track):
     # profile_tab: which profile page people open (detail = the tab id, a fixed set)
-    if q.e in ("mode", "fair_prices", "shortlist", "time") or q.e == "profile_tab" and q.d in PROFILE_TABS:
-        telemetry.record(q.e, q.d, q.n)
+    if not (q.e in ("mode", "fair_prices", "shortlist", "time") or q.e == "profile_tab" and q.d in PROFILE_TABS):
+        raise HTTPException(400, "unknown event")
+    telemetry.record(q.e, q.d, q.n)
     return {"ok": True}
 
 

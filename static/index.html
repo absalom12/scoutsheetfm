@@ -1628,8 +1628,8 @@ for (const [k, [def, ok]] of Object.entries(SETTINGS)) { let v = null; try { v =
 const CUR = SET.cur, PER = SET.per;
 const height = cm => SET.height === 'cm' ? `${cm} cm` : (i => `${Math.floor(i / 12)}'${i % 12}"`)(Math.round(cm / 2.54));
 const curSym = () => CURRENCIES[CUR][0], wageK = () => CURRENCIES[CUR][1] * PERIODS[PER][1];
-const money = v => { if (v == null) return '–'; v *= CURRENCIES[CUR][1]; return curSym() + (v >= 1e6 ? `${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1)}M` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : Math.round(v)); };
-const wage = v => { if (v == null) return '–'; v *= wageK(); return curSym() + (v >= 1e6 ? `${+(v / 1e6).toFixed(1)}M` : v >= 1e5 ? `${Math.round(v / 1e3)}k` : v >= 1e3 ? `${+(v / 1e3).toFixed(1)}k` : Math.round(v)) + PERIODS[PER][0]; };
+const money = v => { if (v == null) return 'n/a'; v *= CURRENCIES[CUR][1]; return curSym() + (v >= 1e6 ? `${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1)}M` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : Math.round(v)); };
+const wage = v => { if (v == null) return 'n/a'; v *= wageK(); return curSym() + (v >= 1e6 ? `${+(v / 1e6).toFixed(1)}M` : v >= 1e5 ? `${Math.round(v / 1e3)}k` : v >= 1e3 ? `${+(v / 1e3).toFixed(1)}k` : Math.round(v)) + PERIODS[PER][0]; };
 const feeIn = v => v == null || Number.isNaN(v) ? v : Math.round(v / CURRENCIES[CUR][1]);  // typed amount -> base unit
 const wageIn = v => v == null || Number.isNaN(v) ? v : Math.round(v / wageK());
 const bare = s => s.replace(/^[£€$]|\/[wmy]$/g, '');
@@ -1667,9 +1667,9 @@ const wageVerdict = (w, fair) => { if (w == null || !fair) return null; const r 
   return r <= .8 ? ['Below fair wage', C.good] : r <= 1.15 ? ['Fair wage', C.accent] : r <= 1.5 ? ['Above fair wage', C.warn] : ['Well above fair wage', C.bad]; };
 const posChips = v => (v || '').split(';').filter(Boolean).map(p => `<span class="pos">${esc(p)}</span>`).join('');
 const abilityBar = (v, gap) => v == null ? '' : `<div class="abar"><span class="mono" style="color:${abilityColor(v)}">${v}</span><div class="tr"><i style="width:${v / 2}%;background:${abilityColor(v)}"></i></div>${gap != null ? `<span class="gap">+${gap}</span>` : ''}</div>`;
-const perfBar = v => v == null ? '<span class="muted" style="font-size:12px" title="Not enough minutes">–</span>' : `<div class="abar"><span class="mono" style="color:${pctColor(v)}">${Math.round(v)}</span><div class="tr"><i style="width:${v}%;background:${pctColor(v)}"></i></div></div>`;
+const perfBar = v => v == null ? '<span class="muted" style="font-size:12px" title="Not enough minutes">n/a</span>' : `<div class="abar"><span class="mono" style="color:${pctColor(v)}">${Math.round(v)}</span><div class="tr"><i style="width:${v}%;background:${pctColor(v)}"></i></div></div>`;
 const fitBar = v => `<div class="fitbar"><i style="width:${v ?? 0}%;background:${v == null ? 'transparent' : scoreColor(v)}"></i></div>`;
-const lastName = n => { const s = String(n || '').trim().split(/\s+/); return s.length > 1 ? s.slice(1).join(' ') : s[0] || '—'; };
+const lastName = n => { const s = String(n || '').trim().split(/\s+/); return s.length > 1 ? s.slice(1).join(' ') : s[0] || 'n/a'; };
 const flag = code => {
   if (!code) return '';
   if (code.startsWith('GB-')) { const t = { 'GB-ENG': 'gbeng', 'GB-SCT': 'gbsct', 'GB-WLS': 'gbwls' }[code];
@@ -1719,12 +1719,12 @@ const KEY = {
   ST: ['finishing','off_the_ball','composure','first_touch','pace','acceleration','heading','anticipation','dribbling'],
 };
 const groupOf = p => p.stat_group || (META.roles && META.roles[p.best_role]) || ((p.positions_gk || 0) >= 15 ? 'GK' : 'CM');
-const fmtM = (k, v) => { const [, , dec = 2, unit = ''] = M[k]; return v == null ? '–' : v.toFixed(dec) + unit; };
+const fmtM = (k, v) => { const [, , dec = 2, unit = ''] = M[k]; return v == null ? 'n/a' : v.toFixed(dec) + unit; };
 function keyAttrs(d, n = 5) {
   if (!d || MODE === 'moneyball') return '';
   const list = (META.role_attributes && META.role_attributes[d.best_role]) || KEY[groupOf(d)] || [];
   return `<div class="kchips">${list.slice(0, n).map(a => { const v = d['attributes_' + a];
-    return `<span class="ac" title="${label('attributes_' + a)}${d.best_role ? ', key for ' + esc(label('role_' + d.best_role)) : ''}">${ABBR[a] || a.slice(0, 3)}<b class="${tier(v)}">${v ?? '–'}</b></span>`; }).join('')}</div>`;
+    return `<span class="ac" title="${label('attributes_' + a)}${d.best_role ? ', key for ' + esc(label('role_' + d.best_role)) : ''}">${ABBR[a] || a.slice(0, 3)}<b class="${tier(v)}">${v ?? 'n/a'}</b></span>`; }).join('')}</div>`;
 }
 function keyStats(d, n = 4) {
   if (!d) return '';
@@ -1783,7 +1783,7 @@ function toast(msg, kind = '', ms = 2600) {
   const t = $('#toast'); t.textContent = msg; t.className = 'toast on ' + kind;
   clearTimeout(toastT); if (ms) toastT = setTimeout(() => t.classList.remove('on'), ms);
 }
-const gender = () => $('#gender [aria-pressed="true"]').dataset.g || null;
+const gender = () => $('#gender [aria-pressed="true"]')?.dataset.g || null;  // a corrupt saved value presses no button: All
 const dealsAvailable = () => META.presets.some(p => p.group === 'Deals');
 const lens = () => LENSES.find(l => l.id === st.lens);
 
@@ -1804,7 +1804,7 @@ function colDef(c) {
     : `<span class="cell-name pname" data-profile="${p.data.uid}" role="link" tabindex="-1" title="Full profile">${esc(p.value)}</span>${CLUB && p.data.club_uid === CLUB.club_uid ? '<span class="ours">OURS</span>' : ''}` });
   if (c === 'nationality') d.cellRenderer = p => natHTML(p.data);
   if (c === 'natural_positions') d.cellRenderer = p => posChips(p.value);
-  if (c === 'best_role') d.valueFormatter = p => p.value ? label('role_' + p.value) : '—';
+  if (c === 'best_role') d.valueFormatter = p => p.value ? label('role_' + p.value) : 'n/a';
   if (c === 'contract_squad_status') d.valueFormatter = p => (p.value || '').replaceAll('_', ' ');
   if (c === 'ability_current') Object.assign(d, { width: 104, cellRenderer: p => abilityBar(p.value) });
   if (c === 'ability_potential') Object.assign(d, { width: 132, cellRenderer: p => p.data ? abilityBar(p.value, hid('pa_gap') ? null : p.data.pa_gap) : '' });
@@ -2006,7 +2006,8 @@ function renderSummary() {
   $('#crit').hidden = !crit.length;
   $('#crit').innerHTML = crit.length ? `<span class="muted" style="font-size:12px;font-weight:600">Criteria</span>` + crit.map(([t], i) => `<span class="crit-chip">${t}<button data-crit="${i}" aria-label="Remove ${esc(t.replace(/<[^>]+>/g, ''))}">×</button></span>`).join('') + '<button class="link" data-es-open>Edit</button>' : '';
   // value_max has its own tile, unless a value minimum folds it into a critList range chip; wage is always in critList
-  const active = ['age_min', 'age_max'].filter(k => F[k] != null).length + (F.value_max != null && F.min.transfer_value == null) + F.positions.length + crit.length;
+  const active = ['age_min', 'age_max'].filter(k => F[k] != null).length + (F.value_max != null && F.min.transfer_value == null) + F.positions.length + crit.length
+    + Object.keys(grid?.getFilterModel() || {}).length + ($('#search')?.value.trim() ? 1 : 0);  // Reset clears column filters and the search too
   $('#reset').innerHTML = active ? `Reset <b>${active}</b>` : 'Reset';
 }
 // Criteria from Edit search shown as removable chips (criteria hidden in this mode are kept but not shown or sent).
@@ -2264,9 +2265,9 @@ function ppTimeline(p, big) {
 }
 const saleTxt = p => p.free_agent ? 'Free agent' : p.transfer_value == null ? 'Not for sale' : 'Asking ' + money(p.transfer_value);
 function simMetric(r) {
-  return MODE === 'moneyball' ? ['Performance', r.stat_score, r.stat_score != null ? Math.round(r.stat_score) : '–', r.stat_score != null ? pctColor(r.stat_score) : C.muted, 100]
+  return MODE === 'moneyball' ? ['Performance', r.stat_score, r.stat_score != null ? Math.round(r.stat_score) : 'n/a', r.stat_score != null ? pctColor(r.stat_score) : C.muted, 100]
     : !hid('ability_current') && r.ability_current != null ? ['Current ability', r.ability_current, r.ability_current, abilityColor(r.ability_current), 200]
-    : ['Best role', r.best_role_score, r.best_role_score != null ? r.best_role_score.toFixed(0) : '–', r.best_role_score != null ? scoreColor(r.best_role_score) : C.muted, 100];
+    : ['Best role', r.best_role_score, r.best_role_score != null ? r.best_role_score.toFixed(0) : 'n/a', r.best_role_score != null ? scoreColor(r.best_role_score) : C.muted, 100];
 }
 
 // Similar players placed by value (log x) and level (y); free agents and players not for sale sit in side gutters.
@@ -2568,7 +2569,7 @@ function secUse() {
 
 // Moneyball twin of Role fit: each role read from season stats (server: STAT_ROLES), bar = percentile vs the role's position group,
 // tick = the limit (ROLE_LIMIT_PCT, the 70th percentile). Under PERF_MIN there is no score: one line, the gate box sits in the pizza card.
-const fmtRS = (k, v) => { const u = META.role_stats?.[k]?.[1]; return v == null ? '–' : u === '%' ? `${v >= 99.95 ? 100 : v.toFixed(1)}%` : v.toFixed(Math.abs(v) >= 10 ? 1 : 2); };
+const fmtRS = (k, v) => { const u = META.role_stats?.[k]?.[1]; return v == null ? 'n/a' : u === '%' ? `${v >= 99.95 ? 100 : v.toFixed(1)}%` : v.toFixed(Math.abs(v) >= 10 ? 1 : 2); };
 const ordN = n => n + (Math.floor(n / 10) % 10 === 1 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
 // ---- Gated Moneyball Overview (under PERF_MIN): totals and previews, no percentile claims ----
 const nat1 = p => (p.natural_positions || '').split(';')[0].replace('STC', 'ST');
@@ -2591,14 +2592,14 @@ function secSsf() {
     t('Goals', p.s_goals ?? 0, p90('s_goals')), t('Assists', p.s_assists ?? 0, p90('s_assists')), t('Shots', p.s_shots ?? 0, p90('s_shots')), t('Key passes', p.s_key_passes ?? 0, p90('s_key_passes'))].join('');
   return `${h3i('level', 'Season so far', 'raw totals this season')}
     <div class="ssf2"><div class="ssf-g">${tiles}</div><div class="ssf-v">${histChart('Value', [['value', 'Value']], money)}</div></div>
-    <p class="ssf-f">Avg rating <b>${p.s_avg_rating ? p.s_avg_rating.toFixed(2) : '–'}</b>, Player of the match <b>${p.s_player_of_the_match ?? 0}</b>, Cards <b>${p.s_yellow_cards ?? 0} Y, ${p.s_red_cards ?? 0} R</b></p>`;
+    <p class="ssf-f">Avg rating <b>${p.s_avg_rating ? p.s_avg_rating.toFixed(2) : 'n/a'}</b>, Player of the match <b>${p.s_player_of_the_match ?? 0}</b>, Cards <b>${p.s_yellow_cards ?? 0} Y, ${p.s_red_cards ?? 0} R</b></p>`;
 }
 const PREV = [['Goals', 's_goals'], ['xG', 's_expected_goals'], ['xA', 's_expected_assists'], ['Shots', 's_shots'], ['Key passes', 's_key_passes'], ['Dribbles', 's_dribbles'], ['Tackles won', 's_tackles_completed'], ['Passes completed', 's_passes_completed']];
 function secPrev() {
   const { p, grp, bench, sim } = ppx, m = p.s_minutes || 0, pool = bench?.pool || [], v = (x, k) => x.s_minutes ? (x[k] || 0) * 90 / x.s_minutes : null;
   // Bar scale: twice the median of his position with PERF_MIN+ min, so the dashed rule (the median) sits mid-bar. No percentile is claimed.
   const bars = PREV.map(([l, k]) => { const me = v(p, k), md = median(pool.map(x => v(x, k))), max = Math.max(me ?? 0, 2 * (md || 0)) || 1;
-    return `<div class="pv-r" title="${esc(`${l}: ${me == null ? '–' : me.toFixed(2)} per 90${md != null ? `, median ${plural(grp)} with ${PERF_MIN}+ min ${md.toFixed(2)}` : ''}`)}"><span>${l}</span><i class="pv-t"><i style="width:${pctW((me ?? 0) / max)}"></i>${md ? `<em style="left:${pctW(md / max)}"></em>` : ''}</i><b class="mono">${me == null ? '–' : me.toFixed(2)}</b></div>`; }).join('');
+    return `<div class="pv-r" title="${esc(`${l}: ${me == null ? 'n/a' : me.toFixed(2)} per 90${md != null ? `, median ${plural(grp)} with ${PERF_MIN}+ min ${md.toFixed(2)}` : ''}`)}"><span>${l}</span><i class="pv-t"><i style="width:${pctW((me ?? 0) / max)}"></i>${md ? `<em style="left:${pctW(md / max)}"></em>` : ''}</i><b class="mono">${me == null ? 'n/a' : me.toFixed(2)}</b></div>`; }).join('');
   const rows = sim?.rows || [];
   const simB = !sim ? '<span class="sk" style="height:90px;width:100%"></span>' : rows.length ? `<div class="sim-mini">${rows.slice(0, 3).map(r => simRow(r)).join('')}</div>`
     : `<div class="gate-mini"><b>Comparable minutes</b><p class="note">Players this close get matched once he has ${PERF_MIN} min.</p><span class="pill gate-chip">Similar players</span></div>`;
@@ -2618,7 +2619,7 @@ function secGateVal() {
   const p = ppx.p, h = (p.history || []).filter(r => r.value != null), mx = h.length ? h.reduce((a, b) => b.value > a.value ? b : a) : null;
   const t = (l, v, sub) => `<div class="ssf-t"><span>${l}</span><b>${v}</b><small>${sub}</small></div>`;
   const vt = h.length >= 2 ? `<div class="gval-t">${t('First', money(h[0].value), dDate(h[0].date))}${t('Peak', money(mx.value), dDate(mx.date))}${t('Now', money(h.at(-1).value), dDate(h.at(-1).date))}</div>` : '';
-  const wt = `<div class="gval-t two">${t('Wage', wage(p.contract_wage), 'contract wage')}${t('Contract', p.months_left != null ? `${p.months_left} mo` : '–', p.contract_end ? `until ${dDate(p.contract_end)}` : 'left')}</div>`;
+  const wt = `<div class="gval-t two">${t('Wage', wage(p.contract_wage), 'contract wage')}${t('Contract', p.months_left != null ? `${p.months_left} mo` : 'n/a', p.contract_end ? `until ${dDate(p.contract_end)}` : 'left')}</div>`;
   return `${h3i('dev', 'Value so far', 'one snapshot per save load')}<div class="gval">${histChart('Value', [['value', 'Value']], money)}</div>${vt}${wt}`;
 }
 function secRoleMB() {
@@ -2679,7 +2680,7 @@ function secPizza(x = ppx, compact = false) {  // compact: the quick view's own 
 const TIERS_CA = [[170, 'World class'], [150, 'Elite'], [130, 'Top-flight level'], [110, 'Solid pro'], [90, 'Lower-league level'], [-1, 'Developing']];
 const TIERS_100 = [[85, 'Elite'], [75, 'Very good'], [65, 'Good'], [55, 'Average'], [-1, 'Below par']];
 const tierOfV = (v, t) => t.find(x => v >= x[0])[1];
-const pill = pc => pc == null ? '<span class="pill">–</span>' : `<span class="pill" style="--c:${pctColor(pc)}">${pc}</span>`;
+const pill = pc => pc == null ? '<span class="pill">n/a</span>' : `<span class="pill" style="--c:${pctColor(pc)}">${pc}</span>`;
 const mean = xs => { const v = xs.filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
 // Header KPI tiles: the five numbers this mode is judged on.
 // Header tiles, labelled as the game labels them; under each number a coloured line says what it means.
@@ -2840,7 +2841,7 @@ function allStats() {
     return `<section class="ast-p"><h5>${t}${md != null ? `<b style="--c:${pctColor(md)}" title="Median percentile of this phase">${Math.round(md)}</b>` : ''}</h5><div class="ast-r ast-hd" aria-hidden="true"><span>Stat</span><b>Season</b><em>Per 90</em><span title="Percentile vs his position">Rank</span></div>${rows.filter(r => r.T != null || r.N != null || r.show).map(r => {  // a stat the save does not store (FM27 pressures): no row
       const cls = top.includes(r) ? ' hi' : low.includes(r) ? ' lo' : '';
       const tip = `${r.l}: ${fmtT(r.T, r.kind)}${r.N != null ? `, ${r.N.toFixed(2)} per 90` : ''}${r.pc != null ? `, better than ${r.pc}% of ${plural(grp)}` : ''}${r.lower ? ' (fewer is better)' : ''}`;
-      return `<div class="ast-r${cls}" title="${esc(tip)}"${r.pc != null ? ` style="--c:${pctColor(r.pc)}"` : ''}><span>${r.l}</span><b>${r.T == null && r.N != null ? '' : r.show ? r.show(p) : fmtT(r.T, r.kind)}</b><em>${r.N == null ? '' : r.N.toFixed(r.kind === 1 && r.N >= 10 ? 1 : 2)}</em>${r.pc == null ? (small || r.kind === 'x' ? '<i></i>' : '<i class="pill">–</i>') : `<i class="pill">${r.pc}</i>`}</div>`; }).join('')}</section>`; }).join('');
+      return `<div class="ast-r${cls}" title="${esc(tip)}"${r.pc != null ? ` style="--c:${pctColor(r.pc)}"` : ''}><span>${r.l}</span><b>${r.T == null && r.N != null ? '' : r.show ? r.show(p) : fmtT(r.T, r.kind)}</b><em>${r.N == null ? '' : r.N.toFixed(r.kind === 1 && r.N >= 10 ? 1 : 2)}</em>${r.pc == null ? (small || r.kind === 'x' ? '<i></i>' : '<i class="pill">n/a</i>') : `<i class="pill">${r.pc}</i>`}</div>`; }).join('')}</section>`; }).join('');
   const chip = r => `<span class="pill" style="--c:${pctColor(r.pc)}" title="${esc(r.g)}">${esc(r.l)} <b>${r.pc}</b></span>`;
   const hl = small ? minsGate(p.s_minutes, PERF_MIN)
     : !bench ? '<span class="note">Loading peers…</span>'
@@ -2899,7 +2900,7 @@ function secCanvas() {
   const ph = PHASE_ATTR[grp === 'GK' ? 'gk' : 'out'];
   const hl = v => v >= 15 ? C.good : v <= 5 ? C.bad : 'var(--text)';  // FM's own colouring: 15+ green, 5 or less red
   const panel = ([t, ks]) => { const av = mean(ks.map(k => p['attributes_' + k])), pm = mean(ks.map(k => mean(pool.map(r => r['attributes_' + k]))));
-    return `<div class="phz"><h5>${t}<b style="color:${sev(av)}" title="${pm != null ? `peer average ${pm.toFixed(1)}` : ''}">${av != null ? av.toFixed(1) : '–'}${pm != null ? ` <small>vs ${pm.toFixed(1)}</small>` : ''}</b></h5>${ks.filter(k => p['attributes_' + k] != null).map(k => { const v = p['attributes_' + k]; return `<div title="${esc(label(k))} ${v}"><span>${label(k)}</span><b style="color:${hl(v)}">${v}</b></div>`; }).join('')}</div>`; };
+    return `<div class="phz"><h5>${t}<b style="color:${sev(av)}" title="${pm != null ? `peer average ${pm.toFixed(1)}` : ''}">${av != null ? av.toFixed(1) : 'n/a'}${pm != null ? ` <small>vs ${pm.toFixed(1)}</small>` : ''}</b></h5>${ks.filter(k => p['attributes_' + k] != null).map(k => { const v = p['attributes_' + k]; return `<div title="${esc(label(k))} ${v}"><span>${label(k)}</span><b style="color:${hl(v)}">${v}</b></div>`; }).join('')}</div>`; };
   return `${h3i('where', 'Where he plays and what he brings', 'bubbles = familiarity, panels = attribute averages')}
     <div class="cnv"><div class="cnv-s">${panel(ph[0])}${panel(ph[2])}</div><div class="cnv-p">${bigPitch(p)}</div><div class="cnv-s">${panel(ph[1])}${panel(ph[3])}</div></div>${famLegend()}`;
 }
@@ -2940,8 +2941,8 @@ function secSwarm() {
       <line x1="${X(md)}" x2="${X(md)}" y1="${y - 11}" y2="${y + 9}" stroke="var(--text2)" stroke-dasharray="2 2"/>
       ${sims.map(r => { const x = fn(r); return x == null ? '' : `<g class="pt" data-pp-uid="${r.uid}"><title>${esc(r.name)}: ${x.toFixed(dec)}${unit} (click to open)</title><circle cx="${X(x)}" cy="${y + 9}" r="4" fill="transparent" stroke="var(--gold)" stroke-width="1.6"/></g>`; }).join('')}
       ${!small && v != null ? `<circle cx="${X(v)}" cy="${y + 9}" r="6" fill="${pc != null ? pctColor(pc) : 'var(--mode)'}" stroke="var(--panel)" stroke-width="2"/>` : ''}
-      <text class="vl" x="${W - R + 8}" y="${y + 4}">${v != null ? v.toFixed(dec) + unit : '–'}</text>
-      ${pc != null ? `<rect x="${W - 34}" y="${y - 8}" width="32" height="16" rx="8" fill="color-mix(in srgb, ${pctColor(pc)} 18%, transparent)"/><text class="pc" x="${W - 18}" y="${y + 4}" text-anchor="middle" fill="${pctColor(pc)}">${pc}</text>` : `<text class="pc" x="${W - 18}" y="${y + 4}" text-anchor="middle" fill="var(--muted)">–</text>`}</g>`; }).join('');
+      <text class="vl" x="${W - R + 8}" y="${y + 4}">${v != null ? v.toFixed(dec) + unit : 'n/a'}</text>
+      ${pc != null ? `<rect x="${W - 34}" y="${y - 8}" width="32" height="16" rx="8" fill="color-mix(in srgb, ${pctColor(pc)} 18%, transparent)"/><text class="pc" x="${W - 18}" y="${y + 4}" text-anchor="middle" fill="${pctColor(pc)}">${pc}</text>` : `<text class="pc" x="${W - 18}" y="${y + 4}" text-anchor="middle" fill="var(--muted)">n/a</text>`}</g>`; }).join('');
   const lg = `<div class="sw-lg" aria-hidden="true"><span><i class="me"></i>${esc(p.name.split(' ').slice(-1)[0])}</span><span><i class="sim"></i>${sims.length} most similar players, hover for the name</span><span><i class="cv"></i>how ${plural(grp)} spread</span><span><i class="md"></i>median</span>${neg.length ? '<span>↓ = fewer is better</span>' : ''}</div>`;
   const lgx = MODE === 'moneyball' ? '' : `<div class="lctx"><p class="ds-k">League context</p><p class="lctx-n">${p.league ? esc(p.league) : `${p.club_country ? esc(p.club_country) + ', ' : ''}league n/a`}</p>${ovlHTML(p, grp) || '<p class="note">No league output yet.</p>'}</div>`;
   return `${head}${small ? minsNote(p.s_minutes || 0) : ''}${lg}<svg class="swarm" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Per-90 stats of ${p.name} among ${pool.length} ${plural(grp)}: ` + keys.map(k => `${M[k][0]} ${M[k][1](p)?.toFixed(M[k][2] ?? 2) ?? 'none'}${!small && bench.pcs[k] != null ? `, percentile ${bench.pcs[k]}` : ''}`).join('; '))}">${rowsSvg}</svg>${lgx}`;
@@ -2949,7 +2950,7 @@ function secSwarm() {
 // One similar player: flag, name, age and club, value, and the number he was matched on.
 const simRow = (r, pa, ak = []) => { const [t, , v, c] = simMetric(r), av = ak.length ? mean(ak.map(k => r[k])) : null;
   return `<button class="sim-row" data-profile="${r.uid}"><span><b>${natHTML(r, false, true)} ${esc(r.name)}</b><small>${r.age} yrs, ${esc(r.club_name || 'Free agent')}</small></span>
-    <span class="mono" style="font-size:12px">${feeHTML(r)}</span>${ak.length ? `<span class="mono" style="color:${av == null ? C.muted : sev(av)};font-weight:700" title="Average of the matched attributes"><span class="sr">Average of the matched attributes </span>${av == null ? '–' : av.toFixed(1)}</span>` : ''}<span class="mono" style="color:${c};font-weight:700" title="${t}"><span class="sr">${t} </span>${v}</span>${pa ? `<span class="mono" style="color:${abilityColor(r.ability_potential)};font-weight:700" title="Potential ability"><span class="sr">Potential ability </span>${r.ability_potential ?? '–'}</span>` : ''}</button>`; };
+    <span class="mono" style="font-size:12px">${feeHTML(r)}</span>${ak.length ? `<span class="mono" style="color:${av == null ? C.muted : sev(av)};font-weight:700" title="Average of the matched attributes"><span class="sr">Average of the matched attributes </span>${av == null ? 'n/a' : av.toFixed(1)}</span>` : ''}<span class="mono" style="color:${c};font-weight:700" title="${t}"><span class="sr">${t} </span>${v}</span>${pa ? `<span class="mono" style="color:${abilityColor(r.ability_potential)};font-weight:700" title="Potential ability"><span class="sr">Potential ability </span>${r.ability_potential ?? 'n/a'}</span>` : ''}</button>`; };
 // Column names over a similar-players list (CA and PA in Full).
 const SIM_SHORT = { 'Current ability': 'CA', Performance: 'Performance', 'Best role': 'Best role' };
 const simHead = (p, pa, ak = []) => `<div class="sim-row sim-hd" aria-hidden="true"><span>Player</span><span>Value</span>${ak.length ? `<span title="Average of ${esc(ak.map(k => label(k)).join(', '))}">Avg</span>` : ''}<span>${SIM_SHORT[simMetric(p)[0]]}</span>${pa ? '<span>PA</span>' : ''}</div>`;
@@ -2973,7 +2974,7 @@ function sideBody(k) {
     const ml = p.months_left, fa = p.free_agent, mbLow = MODE === 'moneyball' && (p.s_minutes || 0) < FAIR_MIN;
     // Urgency: red in the last 6 months (pre-contract window), orange in the final year, else the mode colour.
     const c = fa || ml == null ? C.muted : ml <= 6 ? C.bad : ml <= 12 ? 'var(--orange)' : 'var(--mode)';
-    const [big, st_, sub] = fa ? ['Free', 'Free agent', 'No fee: only his wage to agree'] : ml == null ? ['–', 'No contract on file', '']
+    const [big, st_, sub] = fa ? ['Free', 'Free agent', 'No fee: only his wage to agree'] : ml == null ? ['n/a', 'No contract on file', '']
       : [leftTxt(Math.max(ml, 0)), ml <= 0 ? 'Expiring' : ml <= 6 ? 'Final months' : ml <= 12 ? 'Final year' : 'Under contract',
         `until ${p.contract_end}${ml <= 0 ? ', he can leave for free' : ml <= 6 ? ', can agree a pre-contract with a foreign club' : ml <= 12 ? ', renewal or sale window' : ''}`];
     const vs = (v, f, fmt) => v == null || f == null ? '' : `<small style="color:${v <= f ? C.good : C.bad}">fair ${fmt(f)}</small>`;
@@ -2983,9 +2984,9 @@ function sideBody(k) {
       ['Wage', wage(p.contract_wage), FAIR ? vs(p.contract_wage, p.fair_wage, wage) : '', fa ? 'Asking wage, as a free agent' : 'Weekly wage'],
       ['Value', ask, FAIR ? (fa ? '' : mbLow && p.fair_fee == null ? `<small>no fair value under ${FAIR_MIN} min</small>` : vs(p.transfer_value, p.fair_fee, money)) : '', 'Game transfer value (asking price)'],
       left && ['Wages to run', money(left), `<small>${leftTxt(ml)} at ${wage(p.contract_wage)}</small>`, 'What his current deal still costs in wages'],
-      !fa && ['Squad status', (p.contract_squad_status || '–').replaceAll('_', ' '), '', ''],
+      !fa && ['Squad status', (p.contract_squad_status || 'n/a').replaceAll('_', ' '), '', ''],
       !fa && p.contract_kind && ['Contract type', p.contract_kind.replaceAll('_', ' '), '', ''],
-      !fa && ['Signed', p.contract_start || '–', p.club_join_date && p.club_join_date !== p.contract_start ? `<small>at the club since ${esc(p.club_join_date)}</small>` : '', '']].filter(Boolean);
+      !fa && ['Signed', p.contract_start || 'n/a', p.club_join_date && p.club_join_date !== p.contract_start ? `<small>at the club since ${esc(p.club_join_date)}</small>` : '', '']].filter(Boolean);
     return `<div class="ct-hero" style="--c:${c}"><b>${esc(big)}</b><span>${st_}</span><small>${esc(sub)}</small></div>${fa ? '' : ppTimeline(p, true)}
       <div class="facts-t">${facts.map(([k_, v, s_, t]) => `<div${t ? ` title="${esc(t)}"` : ''}><span>${k_}</span><b>${esc(v)}</b>${s_}</div>`).join('')}</div>
       ${p.suspensions ? '<div class="tags"><span class="tag bad">Suspended</span></div>' : ''}`;
@@ -3014,7 +3015,7 @@ function sideBody(k) {
     const facts = [p.club_join_date && ['Joined the club', p.club_join_date], p.on_loan && ['On loan', `from ${p.loan_parent_club_name || '?'}${p.loan_end ? ' until ' + p.loan_end : ''}`],
       p.home_grown_club_names && ['Home-grown at', p.home_grown_club_names.replaceAll(';', ', ')], p.raw_condition != null && ['Condition / sharpness', `${Math.round(p.raw_condition / 100)}%, ${Math.round((p.raw_match_sharpness ?? 0) / 100)}%`]].filter(Boolean);
     return `<div class="facts-t">${facts.map(([k_, v]) => `<div><span>${k_}</span><b>${esc(v)}</b></div>`).join('')}</div>
-      <h4>Registrations</h4>${chain.length ? `<table class="reg"><thead><tr><th>Club</th><th>From</th><th>To</th><th>Wage</th></tr></thead><tbody>${chain.map(c => `<tr><td>${esc(c.club_name || '?')}</td><td>${esc(c.start || '–')}</td><td>${esc(c.end || '–')}</td><td>${c.wage ? wage(c.wage) : '–'}</td></tr>`).join('')}</tbody></table>` : '<p class="note">No registration recorded.</p>'}`;
+      <h4>Registrations</h4>${chain.length ? `<table class="reg"><thead><tr><th>Club</th><th>From</th><th>To</th><th>Wage</th></tr></thead><tbody>${chain.map(c => `<tr><td>${esc(c.club_name || '?')}</td><td>${esc(c.start || 'n/a')}</td><td>${esc(c.end || 'n/a')}</td><td>${c.wage ? wage(c.wage) : 'n/a'}</td></tr>`).join('')}</tbody></table>` : '<p class="note">No registration recorded.</p>'}`;
   }
   if (k === 'traits') {
     const rep = [['World', p.reputation_world], ['Current', p.reputation_current], ['Home', p.reputation_home], ['Club', p.club_reputation]].filter(x => x[1] != null);
@@ -3054,7 +3055,7 @@ function seasonStrip(p, gk) {
     : [it(n(p.s_goals), n(p.s_goals) === 1 ? 'goal' : 'goals', p90(p.s_goals) ? p90(p.s_goals) + ' per 90' : ''), it(n(p.s_assists), n(p.s_assists) === 1 ? 'assist' : 'assists', p90(p.s_assists) ? p90(p.s_assists) + ' per 90' : '')];
   return `<div class="pp-season" role="group" aria-label="This season"><em>Season</em>${it(apps, apps === 1 ? 'app' : 'apps', `${n(p.s_starts)} starts, ${n(p.s_substitute_appearances)} as a sub`)}${it(m.toLocaleString(), 'min')}${pair.join('')}
     ${!gk && p90(p.s_goals) ? it(p90(p.s_goals), 'G/90') + it(p90(p.s_assists), 'A/90') : ''}
-    <span><b style="color:${p.s_avg_rating ? ratingColor(p.s_avg_rating) : C.muted}">${p.s_avg_rating ? p.s_avg_rating.toFixed(2) : '–'}</b>avg rating</span></div>`;
+    <span><b style="color:${p.s_avg_rating ? ratingColor(p.s_avg_rating) : C.muted}">${p.s_avg_rating ? p.s_avg_rating.toFixed(2) : 'n/a'}</b>avg rating</span></div>`;
 }
 const MODE_WHAT = { full: 'everything the save knows: CA, PA and hidden attributes', fair: 'what a scout can see: no CA / PA, no hidden attributes', moneyball: 'stats and money only: no attributes' };
 // Short list of similar players (Overview), the full one lives on the Similar page.
@@ -3089,7 +3090,7 @@ function histChart(title, series, fmt = v => v) {
 const lensSpread = p => { const v = LENSES.filter(l => l.id !== 'blend' && lensOk(l) && p[l.ffee] > 0).map(l => p[l.ffee]); return v.length > 1 ? Math.max(...v) / Math.min(...v) : null; };
 PP_FN.pverdict = () => {
   const { p } = ppx, f = p.fair_fee, ask = p.free_agent ? 0 : p.transfer_value, hi = (p.fair_fee_range || [f, f])[1];
-  const facts = `<div class="pv-facts"><span>Contract <b>${p.free_agent ? 'free agent' : p.months_left == null ? '–' : leftTxt(Math.max(p.months_left, 0))}</b>${p.contract_end ? `, until ${esc(String(p.contract_end))}` : ''}</span>
+  const facts = `<div class="pv-facts"><span>Contract <b>${p.free_agent ? 'free agent' : p.months_left == null ? 'n/a' : leftTxt(Math.max(p.months_left, 0))}</b>${p.contract_end ? `, until ${esc(String(p.contract_end))}` : ''}</span>
     <span>Wage <b>${wage(p.contract_wage)}</b>${FAIR && p.fair_wage != null ? `, fair <b>${wage(p.fair_wage)}</b>` : ''}</span></div>`;
   if (MODE === 'moneyball' && (p.s_minutes || 0) < FAIR_MIN) return h3i('cost', 'Is he worth it?') + minsGate(p.s_minutes || 0, FAIR_MIN, true) + facts;
   if (!FAIR || f == null) return `${h3i('cost', 'Price', FAIR ? 'no fair value for him' : 'fair prices off')}<span class="pv-word" style="--c:var(--text)">${feeHTML(p)}</span>
@@ -3113,7 +3114,7 @@ PP_FN.plens = () => { const { p } = ppx, ask = p.free_agent ? 0 : p.transfer_val
 PP_FN.pmarket = () => { const { p, grp, bench } = ppx, pool = bench?.pool || [];
   return h3i('level', 'Against the market', `vs ${plural(grp)}`) + (bench ? strip('Asking value', pool.map(r => r.transfer_value), p.free_agent ? 0 : p.transfer_value, money, grp) + strip('Wage', pool.map(r => r.contract_wage), p.contract_wage, wage, grp) : '<span class="sk" style="height:120px;width:100%"></span>'); };
 PP_FN.phist = () => h3i('dev', 'How his price moved', 'one snapshot per save load') + `<div class="hist-sm">${histChart('Value', [['value', 'Value']], money)}${MODE === 'full' ? histChart('Ability', [['ca', 'CA'], ['pa', 'PA', true]])
-  : MODE === 'fair' ? histChart('Average attribute', [['attr_avg', 'Avg']], v => v == null ? '–' : v.toFixed(1)) : ''}</div>`;
+  : MODE === 'fair' ? histChart('Average attribute', [['attr_avg', 'Avg']], v => v == null ? 'n/a' : v.toFixed(1)) : ''}</div>`;
 const PP_SIDE_I = { contract: 'clock', clauses: 'sign', club: 'club', traits: 'good' };  // contract page headings get the icon the other pages have
 const ppCard = k => PP_FN[k] ? PP_FN[k]() : `<h3>${PP_SIDE_I[k] ? ppIcon(PP_SIDE_I[k]) : ''}<span class="h3l">${PP_SIDE_L[k]}</span></h3><div class="sd-body">${sideBody(k)}</div>`;
 const setPpTab = t => {
@@ -3798,7 +3799,7 @@ function attrPanel(p, pos, title, val) {
   // ponytail: the tick is a fixed bar (15 for key attributes, 12 for preferred), not what FM's role screen asks; calibrate with roles decoded.
   const rows = [...(META.role_attributes[r] || []).slice(0, 3).map(a => [a, 1]), ...(META.role_secondary?.[r] || []).slice(0, 2).map(a => [a, .5])];
   return `<div class="ap"><h3>${title}<span>${esc(lastName(p.name))}: ${n0(val)}</span></h3>${rows.map(([a, w]) => { const v = p['attributes_' + a];
-    return `<div class="ar${w < 1 ? ' pref' : ''}"><span>${esc(label('attributes_' + a))}</span><i class="fbar"><i style="width:${(v ?? 0) * 5}%;background:${ringC((v ?? 0) * 5)}"></i><u style="left:${w < 1 ? 60 : 75}%"></u></i><b class="mono">${v ?? '–'}</b></div>`; }).join('')}</div>`;
+    return `<div class="ar${w < 1 ? ' pref' : ''}"><span>${esc(label('attributes_' + a))}</span><i class="fbar"><i style="width:${(v ?? 0) * 5}%;background:${ringC((v ?? 0) * 5)}"></i><u style="left:${w < 1 ? 60 : 75}%"></u></i><b class="mono">${v ?? 'n/a'}</b></div>`; }).join('')}</div>`;
 }
 function renderSlotCard() {
   const card = $('#slotCard'); if (!card) return;
@@ -3865,7 +3866,7 @@ const KEY_STATS = { ST: ['s_goals_p90', 's_xg_p90', 's_shots_p90'], W: ['s_dribb
 function recoKeys(p) {
   const g = SLOT_GRP[p.target_pos] || groupOf(p), chip = (l, v, cls = '', t = l) => `<span class="ac" title="${esc(t)}">${l}<b class="${cls}">${v}</b></span>`;
   if (basis() === 'performance') return [...(KEY_STATS[g] || []).map(k => p[k] != null ? chip(STAT_ABBR[k], Number.isInteger(p[k]) ? p[k] : p[k].toFixed(k === 'stat_score' ? 0 : 2), '', label(k)) : '')].join('');
-  return [MODE === 'full' && p.ability_current != null ? chip('CA', p.ability_current, '', 'Current ability') + chip('PA', p.ability_potential ?? '–', '', 'Potential ability') : '',
+  return [MODE === 'full' && p.ability_current != null ? chip('CA', p.ability_current, '', 'Current ability') + chip('PA', p.ability_potential ?? 'n/a', '', 'Potential ability') : '',
     ...KEY_ATTRS[g].map(a => { const v = p['attributes_' + a];  // 3 colours here (weak / normal / strong), see .reco-legend
       return v != null ? chip(ABBR[a] || a.slice(0, 3), v, v <= 6 ? 'a1' : v >= 15 ? 'a4' : '', `${label('attributes_' + a)} ${v}/20`) : ''; })].join('');
 }
@@ -3923,7 +3924,7 @@ function renderOfPlayer() {
   el.innerHTML = p ? `<div class="of-card"><div style="display:flex;justify-content:space-between;gap:8px"><div><h3><span class="pname" data-profile="${p.uid}" role="link" tabindex="0" title="Full profile">${esc(p.name)}</span></h3>
       <div class="muted" style="font-size:13px;margin-top:4px">${natHTML(p)}, ${esc(p.club_name || 'Free agent')}, ${p.age} yrs</div><div style="margin-top:6px">${posChips(p.natural_positions)}</div></div>
       <button class="link" data-profile="${p.uid}">Profile</button></div>
-      <div class="of-grid" style="grid-template-columns:repeat(3,1fr)"><div class="kv">Game value<b>${feeHTML(p)}</b></div><div class="kv">Wage<b>${wage(p.contract_wage)}</b></div><div class="kv">Contract<b>${p.months_left != null ? leftTxt(p.months_left) : '–'}</b></div></div></div>` : '';
+      <div class="of-grid" style="grid-template-columns:repeat(3,1fr)"><div class="kv">Game value<b>${feeHTML(p)}</b></div><div class="kv">Wage<b>${wage(p.contract_wage)}</b></div><div class="kv">Contract<b>${p.months_left != null ? leftTxt(p.months_left) : 'n/a'}</b></div></div></div>` : '';
 }
 function pickOfferPlayer(p) {
   if (!p) return;
@@ -3995,7 +3996,7 @@ function renderVerdict(o) {
     <div class="of-quick">${quick.map(([l, v]) => `<button class="btn" data-offee="${Math.round(v)}">${l}, ${money(v)}</button>`).join('')}${quickW}</div>
     ${o.notes?.length ? `<div class="sec"><h3>Scout's notes</h3><ul class="notes">${o.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>` : ''}
     ${o.lenses?.length ? `<div class="sec"><h3>How the fair price is built</h3><table class="lens-tbl"><thead><tr><th>Lens</th><th class="r">Fair value</th><th class="r">Fair wage</th></tr></thead><tbody>
-      ${o.lenses.map(l => `<tr><td>${esc((LENSES.find(x => x.id === l.lens) || { label: l.lens }).label)}</td><td class="mono">${money(l.fair_fee)}</td><td class="mono">${l.fair_wage != null ? wage(l.fair_wage) : '–'}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+      ${o.lenses.map(l => `<tr><td>${esc((LENSES.find(x => x.id === l.lens) || { label: l.lens }).label)}</td><td class="mono">${money(l.fair_fee)}</td><td class="mono">${l.fair_wage != null ? wage(l.fair_wage) : 'n/a'}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
 }
 let acT, acSeq = 0;
 function offerSearch() {
@@ -4022,7 +4023,7 @@ let cmpA = null, cmpB = null, cmpT, cmpSeq = 0, cmpTabId = 'ver', cmpRole = null
 // Picker for player B (ui-ux-designer "casting" screen): A's plate vs an empty B slot, a search bar, then
 // "Similar to A" (same position, value within ±35%) beside Recently viewed and Starred. One row builder for every list.
 const CMP_POS = { DC: 'CB', SW: 'CB', MC: 'CM', STC: 'ST', AMC: 'AM' };
-const cmpKey = x => MODE === 'full' && x.best_role_score != null ? [Math.round(x.best_role_score), roleTag(x.best_role)] : [x.stat_score != null ? Math.round(x.stat_score) : '–', 'perf'];
+const cmpKey = x => MODE === 'full' && x.best_role_score != null ? [Math.round(x.best_role_score), roleTag(x.best_role)] : [x.stat_score != null ? Math.round(x.stat_score) : 'n/a', 'perf'];
 const cmpItem = x => { const [k, t] = cmpKey(x);
   return `<button type="button" class="ac-item cmp-row" data-cmp-pick="${x.uid}"><span class="cr-n"><span class="flag">${flag(x.nationality_code)}</span> <b>${esc(x.name)}</b><small>${esc(x.club_name || 'Free agent')}</small></span>
     <span class="cr-p">${posChips(x.natural_positions)}</span><span class="cr-a">${x.age ?? ''}</span><span class="cr-v mono">${x.free_agent ? 'Free' : money(x.transfer_value)}</span>
@@ -4095,7 +4096,7 @@ function cmpTab(t) {
 // Paired bars (A grows left, B right, one shared scale). o: { ph: page to score it in, max, f, lower, cls, attrs (makes it a button) }.
 let cmpScore = {};
 function cmpFly(l, a, b, o = {}) {
-  const { ph, max = 20, f = v => v ?? '–', lower = false, cls = '', attrs = '' } = o;
+  const { ph, max = 20, f = v => v ?? 'n/a', lower = false, cls = '', attrs = '' } = o;
   const d = a == null || b == null || a === b ? 0 : (a > b) !== lower ? 1 : -1;
   if (ph) { const s = cmpScore[ph] ??= { a: 0, b: 0, t: 0 }; d > 0 ? s.a++ : d < 0 ? s.b++ : s.t++; }
   const dd = Math.abs(a - b), gap = (max === 20 || max === 100) && d ? `<em>+${Number.isInteger(dd) ? dd : dd.toFixed(1)}</em>` : '', tag = attrs ? 'button' : 'div', w = v => pctW(Math.max(v ?? 0, 0) / max);  // a negative (overpriced deal) has no bar
@@ -4110,7 +4111,7 @@ function cmpRoles(A, B, pos) {
   cmpRolePos = pos;
   const rs = Object.keys(META.roles || {}).filter(r => rolePos(r).includes(pos)).map(r => [r, A[pre + r], B[pre + r]])
     .filter(x => x[1] != null || x[2] != null).sort((x, y) => Math.max(y[1] ?? 0, y[2] ?? 0) - Math.max(x[1] ?? 0, x[2] ?? 0)).slice(0, mb ? 8 : 12);
-  return `<section class="pp-card">${h3i('role', `Roles at ${pos}`, `<i class="ka">●</i> ${famNum() ? A[posKey(pos)] ?? '–' : famTxt(A[posKey(pos)] ?? 0)}, <i class="kb">◆</i> ${famNum() ? B[posKey(pos)] ?? '–' : famTxt(B[posKey(pos)] ?? 0)}, a score assumes he plays there`)}
+  return `<section class="pp-card">${h3i('role', `Roles at ${pos}`, `<i class="ka">●</i> ${famNum() ? A[posKey(pos)] ?? 'n/a' : famTxt(A[posKey(pos)] ?? 0)}, <i class="kb">◆</i> ${famNum() ? B[posKey(pos)] ?? 'n/a' : famTxt(B[posKey(pos)] ?? 0)}, a score assumes he plays there`)}
     <div class="seg cmp-posbar" role="group" aria-label="Position">${POSITIONS.map(k => `<button type="button" data-cmp-pos="${k}" aria-pressed="${k === pos}">${k}</button>`).join('')}</div>
     ${rs.map(([r, a, b]) => cmpFly(label('role_' + r), a == null ? null : Math.round(a), b == null ? null : Math.round(b), { max: 100, attrs: mb ? `data-cmp-srole="${r}" title="Compare the stats this role needs"` : `data-cmp-role="${r}" title="Compare the attributes this role needs"` })).join('')
       || `<p class="note">${mb ? `Stats roles need ${PERF_MIN} league minutes at a position he plays (15+ familiarity).` : 'No role scores at this position.'}</p>`}</section>`;
@@ -4153,7 +4154,7 @@ async function cmpShow(uid) {
   cmpAttr = (r, score = false) => { const rs = roleSet(r);
     const pick = `<select id="cmpRoleSel" class="in" aria-label="Focus on a role"><option value="">All attributes</option>${roles.map(x => `<option value="${x}"${x === r ? ' selected' : ''}>${label('role_' + x)} (${roleTag(x)}), ${Math.round(A['role_' + x])}</option>`).join('')}</select>`;
     const recap = card('level', 'By type', `${pick}`, TYPES.map(([t, list]) => [t, typeAvg(A, list, rs), typeAvg(B, list, rs)]).filter(([t, a, b]) => !rs || a != null || t !== 'Hidden')  // a role never uses hidden attributes
-      .map(([t, a, b]) => cmpFly(t, a, b, { max: 20, f: v => v == null ? '–' : v.toFixed(1) })).join('')
+      .map(([t, a, b]) => cmpFly(t, a, b, { max: 20, f: v => v == null ? 'n/a' : v.toFixed(1) })).join('')
       + (rs ? `<p class="note"><i class="dot r-key"></i> primary, <i class="dot r-sec"></i> secondary attribute of ${label('role_' + r)}${META.role_secondary ? '' : ' '}; the recap counts only these.</p>` : ''));
     return `<div class="cmp-stack">${recap}${grid(3, phase('attr', TYPES[0][0], TYPES[0][1], 'attr', rs, score), phase('attr', 'Mental', ATTR.mental, 'attr', rs, score), phase('attr', 'Physical', ATTR.physical, 'attr', rs, score))}</div>`; };
   if (!roles.includes(cmpRole)) cmpRole = roles.includes(A.best_role) ? A.best_role : null;
@@ -4170,13 +4171,13 @@ async function cmpShow(uid) {
   const short = [A, B].filter(x => (x.s_minutes || 0) < PERF_MIN).map(x => `${esc(x.name)} has ${(x.s_minutes || 0).toLocaleString()} min`);
   const base = cmpFly('League minutes', A.s_minutes || 0, B.s_minutes || 0, { max: Math.max(A.s_minutes || 0, B.s_minutes || 0, 1), f: v => (v ?? 0).toLocaleString() })
     + cmpFly('Appearances', A.s_apps ?? null, B.s_apps ?? null, { max: Math.max(A.s_apps || 0, B.s_apps || 0, 1) });
-  const rows = both.length >= 3 ? both.map(k => bell(k)) : ks.map(k => { const [l, fn, , , lower] = M[k], a = fn(A), b = fn(B); return cmpFly(l, a, b, { ph: 'sea', max: Math.max(a ?? 0, b ?? 0) || 1, f: v => v == null ? '–' : fmtM(k, v), lower }); });
+  const rows = both.length >= 3 ? both.map(k => bell(k)) : ks.map(k => { const [l, fn, , , lower] = M[k], a = fn(A), b = fn(B); return cmpFly(l, a, b, { ph: 'sea', max: Math.max(a ?? 0, b ?? 0) || 1, f: v => v == null ? 'n/a' : fmtM(k, v), lower }); });
   const allStats = (rows.length > 10 ? grid(2, rows.slice(0, Math.ceil(rows.length / 2)).join(''), rows.slice(Math.ceil(rows.length / 2)).join('')) : rows.join(''))
     + (both.length < 3 && short.length ? `<p class="note">Percentiles need ${PERF_MIN} league minutes: ${short.join(', ')}.</p>` : '');
   // A picked position + role swaps the Per 90 list for that role's stats (server percentiles vs the role's group,
   // primary first). Never scored: "lines won" stays the All stats count.
   const rbell = (k, a, b, cls) => { const [l, u] = META.role_stats?.[k] || [k], v = x => x && x.value != null ? x : null, xa = v(a), xb = v(b), pa = xa?.pct, pb = xb?.pct;
-    const both2 = xa && xb, d = !both2 || pa === pb ? 0 : pa > pb ? 1 : -1, lo = both2 ? Math.min(pa, pb) : 0, hi = both2 ? Math.max(pa, pb) : 0, f = x => x ? fmtRS(k, x.value) : '–';
+    const both2 = xa && xb, d = !both2 || pa === pb ? 0 : pa > pb ? 1 : -1, lo = both2 ? Math.min(pa, pb) : 0, hi = both2 ? Math.max(pa, pb) : 0, f = x => x ? fmtRS(k, x.value) : 'n/a';
     const txt = `${l}: ${A.name} ${f(xa)}${xa ? ` (${ordN(pa)} percentile)` : ''}, ${B.name} ${f(xb)}${xb ? ` (${ordN(pb)} percentile)` : ''}`;
     return `<div class="db ${cls}" role="img" aria-label="${esc(txt)}" title="${esc(txt)}"><span aria-hidden="true">${l}</span><div class="db-tr" aria-hidden="true"><i class="md"></i>${both2 ? `<i class="ln ${d > 0 ? 'wa' : d < 0 ? 'wb' : ''}" style="left:${lo}%;width:${hi - lo}%"></i>` : ''}
       ${xa ? `<i class="pa" style="left:${pa}%"></i>` : ''}${xb ? `<i class="pb" style="left:${pb}%"></i>` : ''}</div><b class="mono" aria-hidden="true"><i class="ka">●</i> ${f(xa)}, <i class="kb">◆</i> ${f(xb)}${u && u !== '%' ? ` <small>${u}</small>` : ''}</b></div>`; };
@@ -4186,7 +4187,7 @@ async function cmpShow(uid) {
     let inner = allStats;
     if (r) { const sa = A.stat_roles?.[r], sb = B.stat_roles?.[r], ks = [...(sa || sb || [])].sort((x, y) => y.weight - x.weight), at = (xs, k) => xs?.find(x => x.stat === k);
       const sc = x => x['srole_' + r] != null ? Math.round(x['srole_' + r]) : null;
-      inner = cmpFly('Stats role score', sc(A), sc(B), { max: 100, f: v => v ?? '–' })
+      inner = cmpFly('Stats role score', sc(A), sc(B), { max: 100, f: v => v ?? 'n/a' })
         + ks.map(x => rbell(x.stat, at(sa, x.stat), at(sb, x.stat), x.weight === 2 ? 'r-key' : 'r-sec')).join('')
         + (ks.length ? `<p class="note"><i class="dot r-key"></i> key, <i class="dot r-sec"></i> secondary stat of ${label('role_' + r)}, percentile vs ${plural(META.roles[r])} with ${PERF_MIN}+ min${short.length ? `, ${short.join(', ')}` : ''}</p>`
           : `<p class="note">Role stats need ${PERF_MIN} league minutes: ${short.join(', ')}.</p>`); }
@@ -4197,19 +4198,19 @@ async function cmpShow(uid) {
   // One pitch for both (owner, overruling [17]'s two pitches), then the top 4 positions as duels.
   body.pos = `<div class="cmp-grid cmp-posgrid">${card('where', `<i class="ka">●</i> ${esc(A.name)}, <i class="kb">◆</i> ${esc(B.name)}`, famNum() ? 'familiarity 1-20, click a position for roles' : 'bigger = more at home, click a position for roles', cmpPitch(A, B), '', 'canvas')}
     ${card('vs', 'Position duel', 'their best 4, click for roles', duelPos.map(k => famNum() ? cmpFly(k, A[posKey(k)] ?? null, B[posKey(k)] ?? null, { attrs: `data-cmp-pos="${k}"` })
-      : cmpFly(k, famLv(fam(A, k)), famLv(fam(B, k)), { max: 3, f: v => ['–', 'Can play', 'Good', 'Natural'][v], attrs: `data-cmp-pos="${k}"` })).join(''))}</div>`;
+      : cmpFly(k, famLv(fam(A, k)), famLv(fam(B, k)), { max: 3, f: v => ["Can't play", 'Can play', 'Good', 'Natural'][v], attrs: `data-cmp-pos="${k}"` })).join(''))}</div>`;
   body.role = cmpRoles(A, B, pos);
   cmpSeaPos = pos; cmpSeaRole = null; body.sea = cmpSea();  // opened directly: All stats
   // Price and contract.
   const lensRows = FAIR ? LENSES.filter(l => lensOk(l) && (A[l.deal] != null || B[l.deal] != null)).map(l => cmpFly(`Deal - ${l.label}`, A[l.deal] ?? null, B[l.deal] ?? null,
-    { max: Math.max(A[l.deal] ?? 0, B[l.deal] ?? 0, 1), f: v => v == null ? '–' : v < -100 ? 'over' : `${v > 0 ? '+' : ''}${Math.round(v)}%` })).join('') : '';
+    { max: Math.max(A[l.deal] ?? 0, B[l.deal] ?? 0, 1), f: v => v == null ? 'n/a' : v < -100 ? 'over' : `${v > 0 ? '+' : ''}${Math.round(v)}%` })).join('') : '';
   const mmax = Math.max(60, A.months_left ?? 0, B.months_left ?? 0), mat = n => (n / mmax * 100).toFixed(1) + '%';
-  const clock = `<div class="rail" role="img" aria-label="${esc(`Contract: ${A.name} ${A.months_left ?? '–'} months left, ${B.name} ${B.months_left ?? '–'}`)}"><span aria-hidden="true">Contract</span><div aria-hidden="true">${[[A, 'ka'], [B, 'kb']].map(([x, k]) =>
+  const clock = `<div class="rail" role="img" aria-label="${esc(`Contract: ${A.name} ${A.months_left ?? 'n/a'} months left, ${B.name} ${B.months_left ?? 'n/a'}`)}"><span aria-hidden="true">Contract</span><div aria-hidden="true">${[[A, 'ka'], [B, 'kb']].map(([x, k]) =>
     `<div class="rail-tr ${k}"><i class="bos" style="width:${mat(6)}"></i>${x.months_left != null ? `<i class="mk" style="left:${mat(x.months_left)}"></i>` : ''}</div>`).join('')}</div>
-    <b class="mono" aria-hidden="true"><i class="ka">●</i> ${A.months_left ?? '–'} mo<br><i class="kb">◆</i> ${B.months_left ?? '–'} mo</b></div><p class="note">Hatched = last 6 months: he can sign a pre-contract with a foreign club.</p>`;
+    <b class="mono" aria-hidden="true"><i class="ka">●</i> ${A.months_left ?? 'n/a'} mo<br><i class="kb">◆</i> ${B.months_left ?? 'n/a'} mo</b></div><p class="note">Hatched = last 6 months: he can sign a pre-contract with a foreign club.</p>`;
   body.price = `<div class="cmp-stack">${card('cost', 'Asking vs fair', FAIR ? 'mark = asking, tick = fair value, band = fair range' : 'asking price and wage',
       cmpRail('Value', A, B, x => x.free_agent ? 0 : x.transfer_value, x => x.fair_fee, x => x.fair_fee_range, money) + cmpRail('Wage', A, B, x => x.contract_wage, x => x.fair_wage, () => null, wage)
-      + (([a, b]) => cmpFly('Value per 90 played', a, b, { lower: true, max: Math.max(a ?? 0, b ?? 0, 1), f: v => v == null ? '–' : money(v) }))([A, B].map(x => (x.s_minutes || 0) >= PERF_MIN && x.transfer_value > 0 && !x.free_agent ? x.transfer_value / (x.s_minutes / 90) : null)))}
+      + (([a, b]) => cmpFly('Value per 90 played', a, b, { lower: true, max: Math.max(a ?? 0, b ?? 0, 1), f: v => v == null ? 'n/a' : money(v) }))([A, B].map(x => (x.s_minutes || 0) >= PERF_MIN && x.transfer_value > 0 && !x.free_agent ? x.transfer_value / (x.s_minutes / 90) : null)))}
     ${grid(2, card('clock', 'Contract', 'months left', clock), card('sign', 'Deal per lens', '% under fair value, over = overpriced', lensRows || `<p class="note">${FAIR ? 'No lens prices him.' : 'Turn on Fair prices to see fair value and deal % here.'}</p>`))}</div>`;
   // Verdict: shape and body on the left; page duels, each player's edges and price on the right.
   const avg = (x, ks) => { const v = ks.map(k => x[att(k)]).filter(v => v != null); return v.length ? v.reduce((s, y) => s + y, 0) / v.length : 0; };
@@ -4223,7 +4224,7 @@ async function cmpShow(uid) {
     return `<button type="button" class="tug" data-cmpgo="${id}" aria-label="${esc(`${names[id]}: ${A.name} better on ${s.a}, ${B.name} on ${s.b}, ${s.t} level. Open the page`)}"><b class="mono" aria-hidden="true">${s.a}</b>
       <i aria-hidden="true"><i class="ta" style="width:${pctW(s.a / n)}"></i><i class="tb" style="width:${pctW(s.b / n)}"></i></i><b class="mono" aria-hidden="true">${s.b}</b><span aria-hidden="true">${names[id]} →</span></button>`; };
   const bodyRows = cmpFly('Age', A.age, B.age, { max: 45, lower: true }).replace(/ w[ab]"/, '"') + (A.height_cm && B.height_cm ? cmpFly('Height', A.height_cm, B.height_cm, { max: 210, f: v => height(v) }) : '')
-    + (A.reputation_current != null ? cmpFly('Reputation', A.reputation_current, B.reputation_current, { max: Math.max(A.reputation_current, B.reputation_current, 1), f: v => v == null ? '–' : (v / 1000).toFixed(1) }) : '');
+    + (A.reputation_current != null ? cmpFly('Reputation', A.reputation_current, B.reputation_current, { max: Math.max(A.reputation_current, B.reputation_current, 1), f: v => v == null ? 'n/a' : (v / 1000).toFixed(1) }) : '');
   body.ver = `<div class="cmp-grid cmp-vgrid">${card('pizza', MODE === 'moneyball' ? 'Output' : 'Shape', MODE === 'moneyball' ? `widest per-90 gaps, percentile vs ${plural(grp)}` : 'phase averages, scale 20',
       `${MODE === 'moneyball' ? cmpFly('Performance', A.stat_score != null ? Math.round(A.stat_score) : null, B.stat_score != null ? Math.round(B.stat_score) : null, { max: 100 })
         + [...both].sort((x, y) => Math.abs(bb.pcs[y] - ba.pcs[y]) - Math.abs(bb.pcs[x] - ba.pcs[x])).slice(0, 4).map(k => bell(k, false)).join('') : `<div class="cmp-shape">${radar(axes.map(([n, ks]) => [n, avg(A, ks)]), 20, 15, axes.map(([, ks]) => avg(B, ks)))}</div>`}${bodyRows}`, 'shape')}
@@ -4234,9 +4235,9 @@ async function cmpShow(uid) {
   // Same 3 numbers in the same order on both sides; their sub-line (deal, months left) moves to the tooltip.
   const kpis = x => [['Value', x.free_agent ? 'Free' : x.transfer_value == null ? 'NFS' : money(x.transfer_value), FAIR && x.deal_score != null ? `${Math.abs(Math.round(x.deal_score))}% ${x.deal_score >= 0 ? 'under' : 'over'} fair value` : 'transfer value'],
     ['Wage', wage(x.contract_wage), x.months_left != null ? `${x.months_left} months left` : 'no contract'],
-    !hid('ability_current') && x.ability_current != null ? ['CA / PA', `${x.ability_current} / ${x.ability_potential ?? '–'}`, 'current / potential ability']
+    !hid('ability_current') && x.ability_current != null ? ['CA / PA', `${x.ability_current} / ${x.ability_potential ?? 'n/a'}`, 'current / potential ability']
       : MODE !== 'moneyball' && x.best_role_score != null ? ['Best role', Math.round(x.best_role_score), label('role_' + x.best_role)]
-      : ['Performance', x.stat_score != null ? Math.round(x.stat_score) : '–', 'performance index']]
+      : ['Performance', x.stat_score != null ? Math.round(x.stat_score) : 'n/a', 'performance index']]
     .map(([l, v, sm]) => `<div title="${esc(sm)}"><span>${l}</span><b>${v}</b></div>`).join('');
   const plate = (x, k) => `<div class="cmp-pl ${k}"><p class="cmp-nm"><span class="nm"><i class="${k}">${k === 'ka' ? '●' : '◆'}</i> ${esc(x.name)}</span>${k === 'kb' ? '<button type="button" class="btn cmp-chg" data-cmp-again title="Pick another player B">Change player</button>' : ''}</p>
     <p class="cmp-meta"><span class="flag">${flag(x.nationality_code)}</span><b>${esc(x.club_name || 'Free agent')}</b><span>${x.age} yrs</span>${posChips(x.natural_positions)}</p><div class="cmp-ks">${kpis(x)}</div></div>`;
@@ -4501,7 +4502,7 @@ async function init() {
   const dealCols = LENSES.flatMap(l => [l.deal, l.ffee, l.fwage]);
   const all = ['star', ...new Set([...FIXED.slice(1), ...Object.values(VIEWS).flat(), ...Object.values(OVERVIEW).flat(), ...dealCols, ...LENSES.flatMap(l => l.ctx)])]
     .filter(c => c === 'star' || VIRTUAL.includes(c) || cols.has(c));
-  try { const g = localStorage.getItem('fm26_gender'); if (g) setGender(g); } catch {}
+  try { const g = localStorage.getItem('fm26_gender'); if (g === 'Men' || g === 'Women') setGender(g); } catch {}
   $('#positions').innerHTML = META.positions.map(p => `<button class="chip" data-pos="${p}" aria-pressed="false">${p}</button>`).join('');
 
   ALL_COLS = new Set(all);
