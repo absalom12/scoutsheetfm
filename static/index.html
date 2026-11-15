@@ -314,7 +314,8 @@ details[open] summary::before { content: "−"; }
 .pp-body[hidden] { display: none; }
 .pp-body:not(.pg-over) { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); grid-auto-rows: minmax(0, 1fr); }
 .pg-stats.m-moneyball { grid-template-columns: minmax(0, .9fr) minmax(0, 1.6fr); grid-template-areas: "swarm stats"; }
-.pg-stats.m-full, .pg-stats.m-fair { grid-template-columns: minmax(0, .95fr) minmax(0, 1.5fr) minmax(0, .8fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "swarm stats pizza"; }
+.pg-stats.m-full, .pg-stats.m-fair { grid-template-columns: minmax(0, .9fr) minmax(0, 1.6fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "swarm stats"; }
+.lctx { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); } .lctx-n { margin: 0 0 6px; font-weight: 600; color: var(--text); }
 .pg-stats [data-pp="pizza"] { justify-content: center; } .pg-stats [data-pp="pizza"] > h3 { position: absolute; top: 10px; left: 14px; right: 14px; } .pg-stats [data-pp="pizza"] .pizza { flex: none; height: auto; }
 .sim-mini .sim-row { min-height: 0; padding: 3px 6px; grid-template-columns: minmax(0, 1fr) auto 34px; gap: 8px; } .sim-mini .sim-row b, .sim-mini .sim-row small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sim-mini .sim-row .tag { font-size: 11px; padding: 0 6px; } .pp-card .link[data-ppgo] { align-self: flex-start; margin-top: 4px; }
@@ -349,12 +350,19 @@ details[open] summary::before { content: "−"; }
 .kpi span { font: 600 10px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .kpi b { font: 700 18px/1.15 var(--f-mono); white-space: nowrap; }
 .kpi small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .kpi small::first-letter { text-transform: uppercase; }
-.kpi.vt { box-shadow: inset 0 2px 0 var(--wc); } .pp-head .kpi.vt { min-width: 0; max-width: 128px; padding: 3px 8px 4px; } .pp-head .kpi.vt b { font-size: 16px; } .pp-head .kpi.vt > span { font-size: 9.5px; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .kpi small.na::first-letter { text-transform: none; } .kpi b .kw { font: 700 13px/21px var(--f-body); color: var(--text); text-transform: none; letter-spacing: 0; }  /* a word in place of a number */  /* the tile's edge takes the colour of its verdict line */
+.kpi.vt { box-shadow: inset 0 2px 0 var(--wc); }
+.rl-vs { margin: 0 0 8px; padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.rl-vs p { margin: 0; font-size: 12.5px; color: var(--text2); white-space: nowrap; } .rl-vs p b { color: var(--text); } .rl-vs p s { display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--gold); transform: rotate(45deg); border-radius: 1px; }
+.rl-tr { position: relative; height: 6px; margin: 0 8px; border-radius: 3px; background: var(--line); }
+.rl-tr .gap { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, var(--gold), var(--mode)); }
+.rl-tr .mk { position: absolute; top: -4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; }
+.rl-tr .me { background: var(--mode); border: 2px solid var(--panel); } .rl-tr .st { background: var(--gold); border-radius: 2px; transform: rotate(45deg) scale(.8); }
+.fb > i > s.rv { position: absolute; top: -2px; width: 11px; height: 11px; margin-left: -5.5px; background: var(--gold); transform: rotate(45deg) scale(.75); border-radius: 2px; z-index: 2; text-decoration: none; }
 .pp-act { display: flex; gap: 8px; align-items: center; flex: none; }
 .pp-body { flex: 1; min-height: 0; display: grid; gap: 10px; margin-top: 10px; }
 /* left column: Role fit over its own Similar players panel */
-.pg-over.m-full, .pg-over.m-fair { grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(300px, 380px); grid-template-rows: minmax(0, 1fr) minmax(0, .55fr) auto; grid-template-areas: "role attr sg" "role canvas radar" "simmini canvas radar"; }
-.pg-over.m-full { grid-template-areas: "role attr sg" "role canvas dev" "simmini canvas dev"; }
+.pg-over.m-full, .pg-over.m-fair { grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(300px, 380px); grid-template-rows: minmax(0, 1fr) minmax(0, .55fr) auto; grid-template-areas: "role attr sg" "role canvas radar" "dsnap canvas radar"; }
+.pg-over.m-full { grid-template-areas: "role attr sg" "role canvas dev" "dsnap canvas dev"; grid-template-rows: minmax(0, 1.12fr) minmax(0, .55fr) auto; }  /* Full's Strengths & gaps lists hidden stats too: a little more height */
 .pg-over.m-moneyball { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(300px, 360px); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "read read pizza" "role simmini pizza"; }
 .rd-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 8px 28px; align-items: start; } @media (max-width: 900px) { .rd-grid { grid-template-columns: 1fr; } }
 .rd-id { margin: 0 0 8px; font-size: 15px; } .rd-pos, .rd-chips { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin: 0 0 8px; } .rd-pos small { color: var(--muted); }
@@ -665,6 +673,11 @@ table.reg td { padding: 4px 6px; border-bottom: 1px solid var(--line); color: va
 .pbar-tr .ask { width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px var(--panel), 0 0 14px var(--c); }
 .pbar-lg { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; font-size: 12px; color: var(--muted); }
 .pbar-lg b { font-family: var(--f-mono); color: var(--text); }
+.ds { display: grid; gap: 6px; } .ds .pbar { margin: 4px 0 0; } .ds .pbar-lg { margin-top: 5px; } .ds-k { font: 600 10px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.ds-v { margin: 0; font-size: 12.5px; color: var(--text2); } .ds-v > b:first-child { font: 700 13px var(--f-display); letter-spacing: .03em; text-transform: uppercase; }
+.pbar-tr .clause { width: 2px; margin-left: -1px; top: -8px; bottom: -4px; background: var(--gold); }
+.pbar-tr .clause::before { content: ""; position: absolute; top: -6px; left: -5px; width: 12px; height: 8px; background: var(--gold); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.pbar-lg .cl, .pbar-lg .cl b { color: var(--gold); }
 .sim-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 70px; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 8px; border-radius: var(--r-sm); text-align: left; }
 .sim-row:hover { background: var(--raise); }
 .sim-row b { font-weight: 600; }
@@ -2614,14 +2627,24 @@ function secRole() {
   const role = roles.some(x => x[0] === ppRole) ? ppRole : (roles.find(([r]) => canPlay(p, r)) || roles[0])[0], sc = p['role_' + role];
   const vals = (META.role_attributes?.[role] || []).map(k => [k, p['attributes_' + k]]).filter(x => x[1] != null);
   const meets = vals.filter(x => x[1] >= 15).length, gaps = vals.filter(x => x[1] <= 11).sort((a, b) => a[1] - b[1]);
+  const vs = (ppx.squad || []).filter(r => r['role_' + role] != null).sort((a, b) => b['role_' + role] - a['role_' + role])[0];
   return `${h3i('role', 'Role fit', 'FM26 key attributes, tick = 15')}
     ${roleSelect(roles, role, p)}
     <div class="rl-top">${ring(sc / 100, scoreColor(sc), sc.toFixed(0), `${label('role_' + role)} fit ${sc.toFixed(0)} of 100`)}
       <div><b>${label('role_' + role)}</b><span>meets <b style="color:${meets >= vals.length / 2 ? C.good : C.warn}">${meets} of ${vals.length}</b> key attributes at 15+</span>
         <span>${gaps.length ? 'Gaps: ' + gaps.slice(0, 3).map(([k, x]) => `${label(k)} ${x}`).join(', ') : 'No key attribute under 12'}</span>
         ${(() => { const xs = (ppx.bench?.pool || []).map(r => r['role_' + role]).filter(x => x != null); if (xs.length < 20) return ''; const pc = pctOf(xs, sc); return `<span>Fit above <b style="color:${pctColor(pc)}">${pc}%</b> of ${xs.length} ${plural(grp)} with ${PERF_MIN}+ min</span>`; })()}</div></div>
-    <div class="fbs">${vals.map(([k, x]) => fbar(label(k), x, x / 20, x >= 15 ? C.good : x >= 12 ? C.ok : C.warn, '', .75)).join('')}</div>
+    ${vs ? vsStrip(p.name, sc, vs.name, vs['role_' + role]) : ''}
+    <div class="fbs">${vals.map(([k, x]) => fbar(label(k), x, x / 20, x >= 15 ? C.good : x >= 12 ? C.ok : C.warn, '', .75).replace(/<i>/, vs?.['attributes_' + k] != null ? `<i><s class="rv" style="left:${pctW(vs['attributes_' + k] / 20)}" title="${esc(vs.name)} ${vs['attributes_' + k]}"></s>` : '<i>')).join('')}</div>
 `;
+}
+// "Better than your starter?": his fit and your best squad player's on one zoomed track.
+function vsStrip(me, sc, name, st) {
+  const lo = Math.max(0, Math.floor((Math.min(sc, st) - 6) / 5) * 5), hi = Math.min(100, Math.ceil((Math.max(sc, st) + 6) / 5) * 5), X = v => pctW((v - lo) / (hi - lo));
+  const d = Math.round(sc) - Math.round(st), last = name.split(' ').at(-1);
+  return `<div class="rl-vs" title="${esc(`◆ = ${name}'s value on each key attribute below`)}"><p><s></s>Your best <b>${esc(last)} ${Math.round(st)}</b> <b style="color:${d > 0 ? C.good : d < 0 ? C.bad : C.muted}" class="mono">${d > 0 ? '+' : ''}${d}</b></p>
+    <div class="rl-tr" role="img" aria-label="${esc(`${name} ${Math.round(st)}, ${me} ${Math.round(sc)}`)}"><i class="gap" style="left:${X(Math.min(sc, st))};width:calc(${X(Math.max(sc, st))} - ${X(Math.min(sc, st))})"></i>
+      <i class="mk st" style="left:${X(st)}" title="${esc(name)} ${Math.round(st)}"></i><i class="mk me" style="left:${X(sc)}" title="${esc(me)} ${Math.round(sc)}"></i></div></div>`;
 }
 function secPizza(x = ppx, compact = false) {  // compact: the quick view's own card (Full, Fair play), one line under PERF_MIN
   const { p, grp, bench } = x, mins = p.s_minutes || 0;
@@ -2673,6 +2696,26 @@ function secHero() {
 `;
 }
 // The deal equation: every price model as a dot against the asking line, fair band behind. Fair prices off: value and wage among peers.
+// Overview deal snapshot (Full, Fair play): what he costs against his fair value, a release clause that applies to your club, and his contract.
+function secDsnap() {
+  const { p } = ppx, ask = p.free_agent ? 0 : p.transfer_value, nat = ppx.squad?.[0]?.club_nation_id;
+  let cls = []; try { cls = JSON.parse(p.contract_clauses || '[]'); } catch {}
+  const applies = c => c.kind === 'minimum_fee_release' || nat != null && p.club_nation_id != null
+    && (c.kind === 'minimum_fee_release_foreign' ? p.club_nation_id !== nat : c.kind === 'minimum_fee_release_domestic' && p.club_nation_id === nat);
+  const cv = cls.filter(c => c.value > 0 && applies(c)).map(c => c.value), clause = cv.length ? Math.min(...cv) : null;
+  const pay = p.free_agent ? 0 : ask == null ? clause : clause != null ? Math.min(ask, clause) : ask, fair = FAIR ? p.fair_fee : null;
+  let verdict = '', bar = '';
+  if (fair) {
+    const ds = pay != null ? (fair - pay) / fair * 100 : null, col = ds == null ? C.muted : ds >= 0 ? dealColor(ds) : C.bad;
+    verdict = ds == null ? `<p class="ds-v"><b>Not for sale</b>, fair value <b class="mono">${money(fair)}</b></p>`
+      : `<p class="ds-v"><b style="color:${col}">${dealTag(ds)}</b> ${pay === clause && clause !== ask ? 'at the release clause' : p.free_agent ? 'on a free' : 'at the asking price'}, ${money(Math.abs(fair - pay))} ${ds >= 0 ? 'under' : 'over'} his fair value</p>`;
+    const [lo, hi] = p.fair_fee_range || [fair, fair], max = Math.max(hi, pay || 0, clause || 0) * 1.12 || 1, at = x => (x / max * 100).toFixed(1) + '%';
+    bar = `<div class="pbar" role="img" aria-label="${esc(`Fair range ${money(lo)} to ${money(hi)}, ${ask == null ? 'not for sale' : 'asking ' + money(ask)}${clause != null ? ', release clause ' + money(clause) : ''}`)}">
+      <div class="pbar-tr" aria-hidden="true"><i class="band" style="left:${at(lo)};width:calc(${at(hi - lo)} + 2px)"></i><i class="fair" style="left:${at(fair)}"></i>${ask != null ? `<i class="ask" style="left:${at(ask)};--c:${col}"></i>` : ''}${clause != null ? `<i class="clause" style="left:${at(clause)}"></i>` : ''}</div>
+      <div class="pbar-lg" aria-hidden="true"><span>Fair range <b>${money(lo)}–${money(hi)}</b></span>${clause != null ? `<span class="cl">Release clause <b>${money(clause)}</b></span>` : `<span>Asking <b>${ask == null ? 'Not for sale' : p.free_agent ? 'Free' : money(ask)}</b></span>`}</div></div>`;
+  } else verdict = `<p class="ds-v">${ask == null ? 'Not for sale' : p.free_agent ? 'Free agent' : `Asking <b class="mono">${money(ask)}</b>`}${clause != null ? `, release clause <b class="mono">${money(clause)}</b>` : ''}${FAIR ? ', no fair value for him' : ''}</p>`;
+  return `${h3i('cost', 'Deal snapshot')}<div class="ds">${verdict}${bar}<div title="Contract">${ppTimeline(p)}</div></div>`;
+}
 function secDeal() {
   const { p, grp, bench } = ppx, ask = p.free_agent ? 0 : p.transfer_value;
   if (!FAIR || p.fair_fee == null) {
@@ -2821,11 +2864,7 @@ function secRead() {
   const pos = POSITIONS.map(k => [k, p[posKey(k)] ?? 0]).filter(x => x[1] >= 9).sort((x, y) => y[1] - x[1]);
   const conf = mins >= FAIR_MIN ? ['High', C.good] : small ? ['Low', C.bad] : ['Medium', C.warn];
   const word = (v, hi, mid, lo) => v >= 66 ? hi : v >= 33 ? mid : lo;
-  const ovl = p.stat_perf == null ? '' : (() => { const pf = p.stat_perf, lv = p.stat_level, base = p.stat_level_est ? 'league level (estimated from his clubs)' : 'league level among the save\'s leagues';
-    return `<div class="ovl"><p><b>${word(pf, 'Strong', 'Solid', 'Weak')} numbers in a ${word(lv, 'top', 'mid', 'lower')} league</b></p>
-      <div class="ovl-tr" role="img" aria-label="${esc(`Output in his league: ${ordN(pf)} percentile among his position. ${base}: ${ordN(lv)} percentile`)}"><i class="md"></i>
-        <i class="ovl-l" style="left:${lv}%" title="${esc(`${base}: ${ordN(lv)} percentile`)}"></i><i class="ovl-p" style="left:${pf}%" title="${esc(`Output vs ${plural(grp)} of his league: ${ordN(pf)} percentile`)}"></i></div>
-      <p class="note"><i class="ovl-k p"></i> output vs his league's ${plural(grp)} <b>${pf}</b>, <i class="ovl-k l"></i> ${p.stat_level_est ? 'level (est.)' : 'league level'} <b>${lv}</b></p></div>`; })();
+  const ovl = ovlHTML(p, grp);
   const chip = r => `<span class="pill" style="--c:${pctColor(r.pc)}" title="${esc(`${r.g}: better than ${r.pc}% of ${plural(grp)}${r.lower ? ' (fewer is better)' : ''}`)}">${esc(r.l)} <b>${r.pc}</b></span>`;
   const chips = sp && (sp.top.length || sp.low.length) ? `<div class="rd-chips">${sp.top.length ? `<span class="ast-t">Best</span>${sp.top.slice(0, 3).map(chip).join('')}` : ''}${sp.low.length ? `<span class="ast-t">Weakest</span>${sp.low.slice(0, 2).map(chip).join('')}` : ''}</div>` : '';
   return `${h3i('where', 'Profile read', small ? `from ${PERF_MIN} min` : `percentiles vs ${plural(grp)} with ${PERF_MIN}+ min`)}
@@ -2854,6 +2893,14 @@ const dens = (xs, lo, hi, n = 48) => {
 const densMemo = new WeakMap();
 const densOf = (pool, k, xs, lo, hi) => { let m = densMemo.get(pool); if (!m) densMemo.set(pool, m = new Map());
   if (!m.has(k)) m.set(k, dens(xs, lo, hi)); return m.get(k); };
+// Output vs league level: his output among his league's players at his position, and how strong that league is.
+function ovlHTML(p, grp) {
+  const word = (v, hi, mid, lo) => v >= 66 ? hi : v >= 33 ? mid : lo;
+  if (p.stat_perf == null) return ''; const pf = p.stat_perf, lv = p.stat_level, base = p.stat_level_est ? 'league level (estimated from his clubs)' : 'league level among the save\'s leagues';
+    return `<div class="ovl"><p><b>${word(pf, 'Strong', 'Solid', 'Weak')} numbers in a ${word(lv, 'top', 'mid', 'lower')} league</b></p>
+      <div class="ovl-tr" role="img" aria-label="${esc(`Output in his league: ${ordN(pf)} percentile among his position. ${base}: ${ordN(lv)} percentile`)}"><i class="md"></i>
+        <i class="ovl-l" style="left:${lv}%" title="${esc(`${base}: ${ordN(lv)} percentile`)}"></i><i class="ovl-p" style="left:${pf}%" title="${esc(`Output vs ${plural(grp)} of his league: ${ordN(pf)} percentile`)}"></i></div>
+      <p class="note"><i class="ovl-k p"></i> output vs his league's ${plural(grp)} <b>${pf}</b>, <i class="ovl-k l"></i> ${p.stat_level_est ? 'level (est.)' : 'league level'} <b>${lv}</b></p></div>`; }
 function secSwarm() {
   const { p, grp, bench, sim } = ppx, small = (p.s_minutes || 0) < PERF_MIN, base = METRICS[grp] || METRICS.CM;
   const neg = grp === 'GK' ? [] : ['ST', 'W'].includes(grp) ? ['lost', 'off'] : ['lost', 'foul'];  // stats where less is better, ↓ in the label
@@ -2875,7 +2922,8 @@ function secSwarm() {
       <text class="vl" x="${W - R + 8}" y="${y + 4}">${v != null ? v.toFixed(dec) + unit : '–'}</text>
       ${pc != null ? `<rect x="${W - 34}" y="${y - 8}" width="32" height="16" rx="8" fill="color-mix(in srgb, ${pctColor(pc)} 18%, transparent)"/><text class="pc" x="${W - 18}" y="${y + 4}" text-anchor="middle" fill="${pctColor(pc)}">${pc}</text>` : `<text class="pc" x="${W - 18}" y="${y + 4}" text-anchor="middle" fill="var(--muted)">–</text>`}</g>`; }).join('');
   const lg = `<div class="sw-lg" aria-hidden="true"><span><i class="me"></i>${esc(p.name.split(' ').slice(-1)[0])}</span><span><i class="sim"></i>${sims.length} most similar players, hover for the name</span><span><i class="cv"></i>how ${plural(grp)} spread</span><span><i class="md"></i>median</span>${neg.length ? '<span>↓ = fewer is better</span>' : ''}</div>`;
-  return `${head}${small ? minsNote(p.s_minutes || 0) : ''}${lg}<svg class="swarm" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Per-90 stats of ${p.name} among ${pool.length} ${plural(grp)}: ` + keys.map(k => `${M[k][0]} ${M[k][1](p)?.toFixed(M[k][2] ?? 2) ?? 'none'}${!small && bench.pcs[k] != null ? `, percentile ${bench.pcs[k]}` : ''}`).join('; '))}">${rowsSvg}</svg>`;
+  const lgx = MODE === 'moneyball' ? '' : `<div class="lctx"><p class="ds-k">League context</p><p class="lctx-n">${p.league ? esc(p.league) : `${p.club_country ? esc(p.club_country) + ', ' : ''}league n/a`}</p>${ovlHTML(p, grp) || '<p class="note">No league output yet.</p>'}</div>`;
+  return `${head}${small ? minsNote(p.s_minutes || 0) : ''}${lg}<svg class="swarm" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Per-90 stats of ${p.name} among ${pool.length} ${plural(grp)}: ` + keys.map(k => `${M[k][0]} ${M[k][1](p)?.toFixed(M[k][2] ?? 2) ?? 'none'}${!small && bench.pcs[k] != null ? `, percentile ${bench.pcs[k]}` : ''}`).join('; '))}">${rowsSvg}</svg>${lgx}`;
 }
 // One similar player: flag, name, age and club, value, and the number he was matched on.
 const simRow = (r, pa, ak = []) => { const [t, , v, c] = simMetric(r), av = ak.length ? mean(ak.map(k => r[k])) : null;
@@ -2965,9 +3013,9 @@ function sideBody(k) {
 }
 // Profile pages per mode: [id, tab label, cards]. Overview and the stats page with the beeswarm place cards by named grid areas (CSS).
 const PP_PAGES = {
-  full: [['over', 'Overview', ['role', 'simmini', 'attr', 'canvas', 'sg', 'dev']], ['report', 'Scouting report', ['rarch', 'rvs', 'rfit', 'rmind', 'rrisk', 'ruse']], ['stats', 'Statistics', ['swarm', 'pizza', 'stats']],
+  full: [['over', 'Overview', ['role', 'dsnap', 'attr', 'canvas', 'sg', 'dev']], ['report', 'Scouting report', ['rarch', 'rvs', 'rfit', 'rmind', 'rrisk', 'ruse']], ['stats', 'Statistics', ['swarm', 'stats']],
     ['similar', 'Similar players', ['similar', 'apx']], ['price', 'Price', ['pverdict', 'plens', 'pmarket', 'phist']], ['contract', 'Contract', ['contract', 'clauses', 'club', 'traits']]],
-  fair: [['over', 'Overview', ['role', 'simmini', 'attr', 'canvas', 'sg', 'radar']], ['report', 'Scouting report', ['rarch', 'rvs', 'rfit', 'rmind', 'rrisk', 'ruse']], ['stats', 'Statistics', ['swarm', 'pizza', 'stats']], ['similar', 'Similar players', ['similar']], ['price', 'Price', ['pverdict', 'plens', 'pmarket', 'phist']], ['contract', 'Contract', ['contract', 'clauses', 'club', 'traits']]],
+  fair: [['over', 'Overview', ['role', 'dsnap', 'attr', 'canvas', 'sg', 'radar']], ['report', 'Scouting report', ['rarch', 'rvs', 'rfit', 'rmind', 'rrisk', 'ruse']], ['stats', 'Statistics', ['swarm', 'stats']], ['similar', 'Similar players', ['similar']], ['price', 'Price', ['pverdict', 'plens', 'pmarket', 'phist']], ['contract', 'Contract', ['contract', 'clauses', 'club', 'traits']]],
   moneyball: [['over', 'Overview', ['read', 'role', 'pizza', 'simmini']], ['stats', 'Statistics', ['swarm', 'stats']], ['similar', 'Similar players', ['similar']], ['price', 'Price', ['pverdict', 'plens', 'pmarket', 'phist']], ['contract', 'Contract', ['contract', 'clauses', 'club', 'traits']]],
 };
 // Moneyball under PERF_MIN: the Overview swaps to a gated grid (ui-ux-designer, owner-approved), g1 = some minutes, g0 = none.
@@ -2993,7 +3041,7 @@ function simMini(n, more = true) {
   const s = ppx.sim; if (!s) return '<span class="sk" style="height:120px;width:100%"></span>';
   return s.rows.length ? `<div class="sim-mini">${s.rows.slice(0, n).map(r => simRow(r)).join('')}</div>${more ? '<button class="link" data-ppgo="similar">All similar players →</button>' : ''}` : '<p class="note">No close match found.</p>';
 }
-const PP_FN = { kpis: secKpis, hero: secHero, deal: secDeal, sg: secSG, dev: secDev, attr: secAttr, role: secRole, canvas: secCanvas, read: secRead, gread: secGateRead, ssf: secSsf, prev: secPrev, pos: secGatePos, val: secGateVal, swarm: secSwarm, pizza: secPizza,
+const PP_FN = { dsnap: secDsnap, kpis: secKpis, hero: secHero, deal: secDeal, sg: secSG, dev: secDev, attr: secAttr, role: secRole, canvas: secCanvas, read: secRead, gread: secGateRead, ssf: secSsf, prev: secPrev, pos: secGatePos, val: secGateVal, swarm: secSwarm, pizza: secPizza,
   radar: () => profileInner(ppx.p), rarch: secArch, rvs: secVs, rfit: secFit, rmind: secMind, rrisk: secRisk, ruse: secUse, simmini: () => h3i('similar', 'Similar players', '<button class="link" data-ppgo="similar">See all →</button>') + simMini(MODE === 'moneyball' ? 7 : 3, false) };
 // Development over the snapshots ScoutSheet keeps each time this career's save is loaded (server: snapshot()).
 // series: [key, label, dashed]; one small line chart, one shared scale (CA and PA, or one measure alone).
@@ -3105,6 +3153,10 @@ async function renderProfile() {
   const again = () => { if (alive()) ppPaint(['kpis', ...ppCards()]); };
   ppBench(p, grp).then(b => { x.bench = b; again(); });
   if (MODE === 'full') ppAbility(p, grp).then(a => { x.abil = a; again(); });
+  // Your squad, to set him against your best man in the same role (Role fit). None when no club is loaded or he is one of yours.
+  (CLUB?.squad ? Promise.resolve(CLUB.squad) : api('/api/club?' + clubQS()).then(r => r.ok ? r.json() : null).then(c => c?.squad || []).catch(() => []))
+    .then(sq => !sq.length || sq.some(s => s.uid === p.uid) ? null : api('/api/players', { start: 0, end: 200, mode: MODE, shortlist: sq.map(s => s.uid) }).then(r => r.ok ? r.json() : null))
+    .then(d => { if (d?.rows?.length) { x.squad = d.rows; again(); } }).catch(() => {});
   if (mb) ppAll(p.gender).then(a => { x.all = a; again(); }).catch(() => {});
   const j = r => r.ok ? r.json() : null;
   Promise.all([api(`/api/similar/${p.uid}${mq()}`).then(j).catch(() => null),
