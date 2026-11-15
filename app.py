@@ -251,6 +251,12 @@ def club_genders(clubs, groups):
     for c in clubs:
         if c.uid not in lab and c.parent_club_uid in lab:
             lab[c.uid] = lab[c.parent_club_uid]
+    # fmsave 0.12+ reads the club's own gender code: it wins over the inference above, which stays for clubs without one.
+    # Bristol 2028 (FM26): the inference left ~4,700 players at unlabelled clubs (US academies, Tigres...).
+    for c in clubs:
+        g = getattr(getattr(c, "gender", None), "label", None)
+        if g is not None and g.name in ("MEN", "WOMEN"):
+            lab[c.uid] = g.name.title()
     return lab
 
 
@@ -412,7 +418,8 @@ STAT_SUMS = ["starts", "substitute_appearances", "minutes", "goals", "assists", 
              "tackles_completed", "interceptions", "possession_won", "possession_lost", "pressures_completed", "aerial_challenges_attempted",
              "headers_won", "clearances", "blocks", "distance_km", "yellow_cards", "red_cards", "player_of_the_match",
              "mistakes_leading_to_goal", "fouls_made", "fouls_against", "offsides",
-             "clean_sheets", "goals_allowed", "shots_on_target_faced", "saves_held", "saves_parried", "saves_tipped", "expected_goals_prevented"]
+             "clean_sheets", "goals_allowed", "shots_on_target_faced", "saves_held", "saves_parried", "saves_tipped", "expected_goals_prevented",
+             "non_penalty_expected_goals", "penalties_taken", "penalties_scored"]
 
 
 def _stats_csv(path):
@@ -424,7 +431,8 @@ def _stats_csv(path):
 
 
 def _stats_sql(path):
-    sums = ", ".join(f"sum({c}) AS s_{c}" for c in STAT_SUMS)
+    have = {c for c, *_ in con().execute(f"DESCRIBE SELECT * FROM {_stats_csv(path)}").fetchall()}
+    sums = ", ".join(f"sum({c}) AS s_{c}" if c in have else f"NULL::DOUBLE AS s_{c}" for c in STAT_SUMS)  # an older export may lack a column
     p90 = lambda e: f"round(({e}) * 90.0 / nullif(s_minutes, 0), 2)"
     return f"""
         WITH t AS (SELECT player_uid, {sums},

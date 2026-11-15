@@ -249,7 +249,7 @@ body .ag-theme-quartz-dark {
 .tag.good { background: var(--good-soft); color: var(--good); }
 .tag.bad { background: var(--bad-soft); color: var(--bad); }
 .tag.warn { background: var(--warn-soft); color: var(--warn); }
-.pp-av { display: inline-flex; gap: 6px; flex: none; align-self: center; margin-left: auto; padding-bottom: 4px; } .pp-av .tag { font-size: 11px; padding: 2px 8px; } .pp-av + .pp-season { margin-left: 0; }  /* on the tab row, left of the season strip */
+.pp-av { display: inline-flex; gap: 6px; flex: none; align-self: center; margin-left: auto; padding-bottom: 4px; } .pp-av .tag { font-size: 11px; padding: 2px 8px; } .pp-avw { display: contents; } .pp-avw:has(.pp-av) + .pp-season { margin-left: 0; }  /* on the tab row, left of the season strip */
 .price { display: grid; grid-template-columns: 1fr 1fr auto; gap: 4px 12px; align-items: end; }
 .kv { font-size: 11px; font-family: var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .kv b { display: block; font: 700 18px var(--f-mono); color: var(--text); letter-spacing: 0; text-transform: none; }
@@ -1689,7 +1689,7 @@ const leftTxt = m => m > 12 ? `${+(m / 12).toFixed(1)} years` : `${m} month${m =
 const per90 = k => p => p.s_minutes && p[k] != null ? p[k] * 90 / p.s_minutes : null;  // no value is n/a, not 0 (FM27 has no pressures)
 // [label, fn, decimals, unit, lowerIsBetter, short]
 const M = {
-  rating: ['Avg rating', p => p.s_avg_rating, 2, '', false, 'Rtg'], goals: ['Goals', per90('s_goals'), 2, '', false, 'Gls'], xg: ['xG', per90('s_expected_goals'), 2, '', false, 'xG'],
+  rating: ['Avg rating', p => p.s_avg_rating, 2, '', false, 'Rtg'], goals: ['Goals', per90('s_goals'), 2, '', false, 'Gls'], xg: ['xG', per90('s_expected_goals'), 2, '', false, 'xG'], npxg: ['npxG', per90('s_non_penalty_expected_goals'), 2, '', false, 'npxG'],
   shots: ['Shots', per90('s_shots'), 2, '', false, 'Sh'], assists: ['Assists', per90('s_assists'), 2, '', false, 'Ast'], xa: ['xA', per90('s_expected_assists'), 2, '', false, 'xA'],
   kp: ['Key passes', per90('s_key_passes'), 2, '', false, 'KP'], ccc: ['Clear-cut chances', per90('s_clear_cut_chances_created'), 2, '', false, 'CCC'],
   drb: ['Dribbles', per90('s_dribbles'), 2, '', false, 'Drb'], prog: ['Progressive passes', per90('s_progressive_passes'), 2, '', false, 'Prog'],
@@ -1706,8 +1706,8 @@ const M = {
 };
 const METRICS = { GK: ['rating','xgp','saves','conc','cs','passpct'], CB: ['rating','tck','int','hdr','hdrpct','tckpct','clr','blk','prog','passpct'],
   FB: ['rating','tck','int','crs','kp','won','prog','drb','passpct'], DM: ['rating','tck','int','prog','won','press','passpct','kp'],
-  CM: ['rating','prog','kp','tck','xa','passpct','won','press','drb'], W: ['rating','goals','assists','drb','kp','xg','xa','crs','shots'],
-  AM: ['rating','goals','kp','xa','xg','ccc','drb','prog','passpct'], ST: ['rating','goals','xg','shots','assists','kp','hdr','drb','press'] };
+  CM: ['rating','prog','kp','tck','xa','passpct','won','press','drb'], W: ['rating','goals','assists','drb','kp','npxg','xa','crs','shots'],
+  AM: ['rating','goals','kp','xa','xg','ccc','drb','prog','passpct'], ST: ['rating','goals','npxg','shots','assists','kp','hdr','drb','press'] };
 const KEY = {
   GK: ['reflexes','handling','one_on_ones','aerial_reach','command_of_area','communication','kicking','positioning','concentration'],
   CB: ['tackling','marking','heading','positioning','jumping_reach','strength','anticipation','concentration','pace'],
@@ -2095,14 +2095,16 @@ const headPos = p => {
   const n = nat.slice(0, 3), a = acc.slice(0, 3 - n.length), rest = [...nat.slice(3), ...acc.slice(a.length)];
   return `${posChips(n.join(';'))}${a.length ? `<span class="muted">also</span>${posChips(a.join(';'))}` : ''}${rest.length ? `<span class="muted" title="${esc('Also: ' + rest.join(', '))}">+${rest.length}</span>` : ''}`;
 };
-// Availability chips on the tab row, only when one applies: suspended, on loan, and in Full a low condition.
+// Tab row chips, only when one applies: suspended, on loan, in Full a low condition, and home-grown in your club's nation.
 // No sharpness chip: nearly every player is under 50% in pre-season, so it would be on every header.
 const availChips = p => {
   const c = [], d = v => new Date(v).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
   if (p.suspensions) { let s = []; try { s = JSON.parse(p.suspensions); } catch {} c.push(['bad', 'Suspended', s.map(x => x.competition_name || (x.scope === 'nation' ? 'internationals' : x.scope)).filter(Boolean).join(', ')]); }
   if (p.on_loan) c.push(['warn', `On loan${p.loan_end ? ' to ' + d(p.loan_end) : ''}`, `On loan${p.loan_parent_club_name ? ' from ' + p.loan_parent_club_name : ''}${p.loan_end ? ' until ' + d(p.loan_end) : ''}`]);
   if (MODE === 'full' && p.raw_condition != null && p.raw_condition < 8500) c.push(['warn', `Condition ${Math.round(p.raw_condition / 100)}%`, 'Physical condition, 100% = fully fit']);
-  return c.length ? `<span class="pp-av">${c.map(([k, t, tip]) => `<span class="tag ${k}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(t)}</span>`).join('')}</span>` : '';
+  const nat = ppx?.p === p ? ppx.squad?.[0]?.club_nation_id : null;  // your club's nation, once your squad is loaded
+  if (nat != null && String(p.home_grown_nation_ids || '').split(';').includes(String(nat))) c.push(['good', 'Home-grown for you', "Counts as home-grown in your club's nation"]);
+  return `<span class="pp-avw">${c.length ? `<span class="pp-av">${c.map(([k, t, tip]) => `<span class="tag ${k}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(t)}</span>`).join('')}</span>` : ''}</span>`;
 };
 // Header sub-line: club first and bold, league when known, then nation, age, height and feet in grey.
 const subLine = (p, big, mb) => `<p class="pp-sub"><b class="pp-club">${esc(p.club_name || 'Free agent')}</b>${p.league ? `<span class="pp-lg">${esc(p.league)}</span>` : ''}<span class="pp-meta">${p.age} yrs${p.height_cm ? `, ${height(p.height_cm)}` : ''} ${natHTML(p, big) || 'Unknown nation'}</span>${mb ? '' : feetHTML(p)}</p>`;
@@ -2795,9 +2797,10 @@ const rateS = (l, fn) => [l, fn, null, false, '%'];
 const ratio = (a, b) => p => p[b] ? (p[a] || 0) / p[b] * 100 : null;
 const gkSaves = p => p.s_saves_held == null && p.s_saves_parried == null && p.s_saves_tipped == null ? null : (p.s_saves_held || 0) + (p.s_saves_parried || 0) + (p.s_saves_tipped || 0);
 const ALL_STATS = {
-  fin: ['Finishing', [cntS('Goals', 's_goals'), cntS('xG', 's_expected_goals', false, 1), ['Goals − xG', p => p.s_goals != null && p.s_expected_goals != null ? p.s_goals - p.s_expected_goals : null,
+  fin: ['Finishing', [cntS('Goals', 's_goals'), cntS('xG', 's_expected_goals', false, 1), cntS('npxG', 's_non_penalty_expected_goals', false, 1), ['Goals − xG', p => p.s_goals != null && p.s_expected_goals != null ? p.s_goals - p.s_expected_goals : null,
     p => p.s_minutes && p.s_goals != null && p.s_expected_goals != null ? (p.s_goals - p.s_expected_goals) * 90 / p.s_minutes : null, false, 1],
-    cntS('Shots', 's_shots'), cntS('Shots on target', 's_shots_on_target'), rateS('Shot accuracy', ratio('s_shots_on_target', 's_shots'))]],
+    cntS('Shots', 's_shots'), cntS('Shots on target', 's_shots_on_target'), rateS('Shot accuracy', ratio('s_shots_on_target', 's_shots')),
+    cntS('Penalties taken', 's_penalties_taken'), cntS('Penalties scored', 's_penalties_scored')]],
   cre: ['Creating', [cntS('Assists', 's_assists'), cntS('xA', 's_expected_assists', false, 1), cntS('Key passes', 's_key_passes'), cntS('Clear-cut chances', 's_clear_cut_chances_created'),
     cntS('Crosses completed', 's_crosses_completed'), cntS('Crosses attempted', 's_crosses_attempted'), rateS('Cross accuracy', ratio('s_crosses_completed', 's_crosses_attempted'))]],
   car: ['Carrying & passing', [cntS('Dribbles', 's_dribbles'), cntS('Progressive passes', 's_progressive_passes'), cntS('Passes completed', 's_passes_completed'),
@@ -3174,7 +3177,7 @@ async function renderProfile() {
   // Your squad, to set him against your best man in the same role (Role fit). None when no club is loaded or he is one of yours.
   (CLUB?.squad ? Promise.resolve(CLUB.squad) : api('/api/club?' + clubQS()).then(r => r.ok ? r.json() : null).then(c => c?.squad || []).catch(() => []))
     .then(sq => !sq.length || sq.some(s => s.uid === p.uid) ? null : api('/api/players', { start: 0, end: 200, mode: MODE, shortlist: sq.map(s => s.uid) }).then(r => r.ok ? r.json() : null))
-    .then(d => { if (d?.rows?.length) { x.squad = d.rows; again(); } }).catch(() => {});
+    .then(d => { if (d?.rows?.length && alive()) { x.squad = d.rows; again(); const w = $('#player .pp-avw'); if (w) w.outerHTML = availChips(p); } }).catch(() => {});
   if (mb) ppAll(p.gender).then(a => { x.all = a; again(); }).catch(() => {});
   const j = r => r.ok ? r.json() : null;
   Promise.all([api(`/api/similar/${p.uid}${mq()}`).then(j).catch(() => null),

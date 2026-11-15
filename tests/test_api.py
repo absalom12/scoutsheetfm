@@ -528,3 +528,14 @@ def test_position_sort_follows_the_pitch(scout, monkeypatch):
     rows = duckdb.sql(f"SELECT natural_positions FROM (VALUES ('STC'), ('AMC;MC'), ('GK'), ('DR;DC'), ('DC'), ('ML'), ('DM')) t(natural_positions) "
                       f"ORDER BY {expr}").fetchall()
     assert [r[0] for r in rows] == ["GK", "DR;DC", "DC", "DM", "ML", "AMC;MC", "STC"]
+
+
+def test_stored_club_gender_beats_the_inference(scout):
+    from types import SimpleNamespace as N
+    import fmsave
+    G = fmsave.models.clubs.ClubGender
+    club = lambda uid, name, g=None: N(uid=uid, name=name, nation_id=1, teams=(), parent_club_uid=None,
+                                       gender=None if g is None else N(label=g, raw=int(g)))
+    # an old uid with no stored code is inferred Men; a stored code wins, even against that inference
+    lab = scout.club_genders([club(1, "Old FC"), club(2, "Women FC", G.WOMEN), club(3, "Academy", G.MEN)], [])
+    assert lab == {1: "Men", 2: "Women", 3: "Men"}
