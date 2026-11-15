@@ -349,6 +349,7 @@ details[open] summary::before { content: "−"; }
 .kpi span { font: 600 10px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .kpi b { font: 700 18px/1.15 var(--f-mono); white-space: nowrap; }
 .kpi small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .kpi small::first-letter { text-transform: uppercase; }
+.kpi.vt { box-shadow: inset 0 2px 0 var(--wc); } .pp-head .kpi.vt { min-width: 0; max-width: 128px; padding: 3px 8px 4px; } .pp-head .kpi.vt b { font-size: 16px; } .pp-head .kpi.vt > span { font-size: 9.5px; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .kpi small.na::first-letter { text-transform: none; } .kpi b .kw { font: 700 13px/21px var(--f-body); color: var(--text); text-transform: none; letter-spacing: 0; }  /* a word in place of a number */  /* the tile's edge takes the colour of its verdict line */
 .pp-act { display: flex; gap: 8px; align-items: center; flex: none; }
 .pp-body { flex: 1; min-height: 0; display: grid; gap: 10px; margin-top: 10px; }
 /* left column: Role fit over its own Similar players panel */
@@ -2638,18 +2639,30 @@ const tierOfV = (v, t) => t.find(x => v >= x[0])[1];
 const pill = pc => pc == null ? '<span class="pill">–</span>' : `<span class="pill" style="--c:${pctColor(pc)}">${pc}</span>`;
 const mean = xs => { const v = xs.filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
 // Header KPI tiles: the five numbers this mode is judged on.
+// Header tiles, labelled as the game labels them; under each number a coloured line says what it means.
 function secKpis(x = ppx) {
-  const { p, grp, abil } = x, mb = MODE === 'moneyball', mins = p.s_minutes || 0;
-  const k = (lbl, v, c, sub) => `<div class="kpi"><span>${lbl}</span><b style="color:${c || 'var(--text)'}">${v}</b><small>${sub}</small></div>`;
-  const perf = p.stat_score != null ? Math.round(p.stat_score) : null, out = [];
-  if (!hid('ability_current') && p.ability_current != null) out.push(k('CA / PA', `${p.ability_current} / ${p.ability_potential ?? '–'}`, abilityColor(p.ability_current), abil?.n ? `top ${Math.max(1, Math.ceil((abil.ca + 1) / abil.n * 100))}% of ${plural(grp)}` : tierOfV(p.ability_current, TIERS_CA)));
-  else if (!mb && p.best_role_score != null) out.push(k('Best role', p.best_role_score.toFixed(0), scoreColor(p.best_role_score), esc(label('role_' + p.best_role))));
-  out.push(k('Performance', perf ?? '–', perf != null ? pctColor(perf) : C.muted, perf != null ? 'index, his league' : `under ${PERF_MIN} min`));
-  out.push(k('Avg rating', p.s_avg_rating ? p.s_avg_rating.toFixed(2) : '–', p.s_avg_rating ? ratingColor(p.s_avg_rating) : C.muted, `${p.s_apps ?? 0} apps, ${mins.toLocaleString()} min`));
-  const ask = p.free_agent ? 'Free' : p.transfer_value == null ? 'Not for sale' : money(p.transfer_value);
-  out.push(k('Value', ask, null, FAIR && p.deal_score != null ? `${Math.abs(Math.round(p.deal_score))}% ${p.deal_score >= 0 ? 'under' : 'over'} fair value` : FAIR && mb && mins < FAIR_MIN ? `no fair value yet` : 'transfer value'));
-  out.push(k('Wage', wage(p.contract_wage), null, p.free_agent ? 'asking, free agent' : p.contract_end ? `until ${esc(p.contract_end)}` : 'no contract'));  // a free agent's stored end date is stale
-  return [...out.slice(-2), ...out.slice(0, -2)].join('');  // value and wage lead
+  const { p } = x, mb = MODE === 'moneyball', mins = p.s_minutes || 0, NA = ['n/a', C.muted], out = [];
+  const k = (lbl, v, c, [word, wc], tip = '') => `<div class="kpi vt" style="--wc:${wc}" title="${word}${tip ? '. ' + esc(tip) : ''}"><span>${lbl}</span><b style="color:${c || 'var(--text)'}">${v}</b><small${word === 'n/a' ? ' class="na"' : ''} style="color:${wc}">${word}</small></div>`;
+  if (!hid('ability_current') && p.ability_current != null) { const pa = p.ability_potential, gap = pa != null ? pa - p.ability_current : 0, c = abilityColor(p.ability_current);
+    out.push(k('CA / PA', `${p.ability_current} / ${pa ?? 'n/a'}`, c, [`${tierOfV(p.ability_current, TIERS_CA)}${gap > 0 ? ', +' + gap : ''}`, c], 'Current and potential ability, out of 200')); }
+  else if (!mb && p.best_role_score != null) { const c = scoreColor(p.best_role_score);
+    out.push(k(esc(label('role_' + p.best_role)), p.best_role_score.toFixed(0), c, [tierOfV(p.best_role_score, TIERS_100), c], `Best role: ${esc(label('role_' + p.best_role))}, fit from his attributes`)); }
+  if (mb) { const perf = p.stat_score != null ? Math.round(p.stat_score) : null, c = perf != null ? pctColor(perf) : C.muted;
+    out.push(k('Performance', perf ?? 'n/a', c, perf != null ? [tierOfV(perf, TIERS_100), c] : [`under ${PERF_MIN} min`, C.muted], 'Output index against his league')); }
+  const ds = p.deal_score, ff = p.fair_fee;
+  out.push(k('Value', p.free_agent ? 'Free' : p.transfer_value == null ? '<span class="kw">Not for sale</span>' : money(p.transfer_value), null,
+    p.free_agent ? ['Free agent', C.good] : !FAIR ? ['Transfer value', C.muted] : mb && mins < FAIR_MIN ? ['No fair value yet', C.muted] : p.transfer_value == null ? (ff ? [`Fair value ${money(ff)}`, C.muted] : NA)
+      : ds == null ? NA : [`${Math.abs(Math.round(ds))}% ${ds >= 0 ? 'under' : 'over'} fair value`, ds >= 0 ? dealColor(ds) : C.bad], 'Asking price against his fair value'));
+  const cw = p.contract_wage, fw = p.fair_wage, d = cw && fw ? Math.round((1 - cw / fw) * 100) : null;
+  out.push(k('Wage', cw == null ? 'n/a' : wage(cw), null, p.free_agent ? ['Asking, free agent', C.muted] : !FAIR || d == null ? ['Current contract', C.muted]
+    : Math.abs(d) < 5 ? ['Fair wage', C.ok] : d > 0 ? [`${d}% under fair wage`, C.good] : [cw / fw >= 3 ? 'Far over fair wage' : `${-d}% over fair wage`, C.bad], 'Wage against his fair wage'));
+  const ml = p.months_left, end = !p.free_agent && p.contract_end ? new Date(p.contract_end) : null;
+  out.push(k('Contract until', end && !isNaN(end) ? end.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : 'n/a', null,
+    p.free_agent ? ['No contract', C.good] : ml == null ? NA : ml <= 6 ? ['Expiring', C.bad] : ml <= 12 ? ['Final year', C.orange] : [`${leftTxt(ml).replace(' years', ' yrs')} left`, ml <= 24 ? C.ok : C.muted], 'Contract end and what is left'));
+  const r = p.s_avg_rating;
+  out.push(k('Avg rating', r ? r.toFixed(2) : 'n/a', r ? ratingColor(r) : C.muted,
+    !r ? ['No league games', C.muted] : mins < 500 ? ['Small sample', C.muted] : r >= 7.3 ? ['Outstanding', C.good] : r >= 6.9 ? ['Strong', C.good] : r >= 6.6 ? ['Solid', C.ok] : ['Below par', C.warn], `${p.s_apps ?? 0} apps, ${mins.toLocaleString()} min`));
+  return out.join('');
 }
 // Full hero: the CA number large with its level word, ranks, the written report, contract bar.
 function secHero() {
@@ -3035,6 +3048,7 @@ PP_FN.phist = () => h3i('dev', 'How his price moved', 'one snapshot per save loa
 const PP_SIDE_I = { contract: 'clock', clauses: 'sign', club: 'club', traits: 'good' };  // contract page headings get the icon the other pages have
 const ppCard = k => PP_FN[k] ? PP_FN[k]() : `<h3>${PP_SIDE_I[k] ? ppIcon(PP_SIDE_I[k]) : ''}<span class="h3l">${PP_SIDE_L[k]}</span></h3><div class="sd-body">${sideBody(k)}</div>`;
 const setPpTab = t => {
+  if (t !== ppTab) track('profile_tab', t);
   ppTab = t; const box = $('#player');
   $$('[data-pptab]', box).forEach(b => { const on = b.dataset.pptab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
   $$('[data-page]', box).forEach(d => { d.hidden = d.dataset.page !== t; });

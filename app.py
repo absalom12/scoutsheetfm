@@ -1440,6 +1440,9 @@ def telemetry_set(q: Consent):
     return telemetry.state()
 
 
+PROFILE_TABS = {"over", "report", "stats", "similar", "price", "contract"}
+
+
 class Track(BaseModel):
     e: str
     d: str | None = None
@@ -1448,7 +1451,8 @@ class Track(BaseModel):
 
 @app.post("/api/track")  # page events: mode switches, shortlist, visible seconds. Ignored unless the user opted in.
 def track(q: Track):
-    if q.e in ("mode", "fair_prices", "shortlist", "time"):
+    # profile_tab: which profile page people open (detail = the tab id, a fixed set)
+    if q.e in ("mode", "fair_prices", "shortlist", "time") or q.e == "profile_tab" and q.d in PROFILE_TABS:
         telemetry.record(q.e, q.d, q.n)
     return {"ok": True}
 
