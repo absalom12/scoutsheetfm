@@ -95,7 +95,8 @@ def offer_move():
     copy (App Translocation) that the in-app update cannot replace. True when the moved copy was started instead."""
     import shutil, subprocess, updater
     from pathlib import Path
-    app = updater.bundle() if sys.platform == "darwin" else None
+    # Not with a custom data folder (tests, dev): nobody is there to answer, and the dialog blocks startup.
+    app = updater.bundle() if sys.platform == "darwin" and not os.environ.get("SCOUTSHEET_DATA_DIR") else None
     asked = data_dir() / "move-asked"
     if not app or app.parent in (Path("/Applications"), Path.home() / "Applications") or asked.exists():
         return False
