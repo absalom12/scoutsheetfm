@@ -830,6 +830,9 @@ dialog::backdrop { background: rgba(3,6,9,.6); backdrop-filter: blur(2px); }
 .tac-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
 .tac .tac-ch { color: var(--warn); }
 /* My Club roles: chips in the slot card, the targets band, the role under each pitch name and weakest slot */
+.rolesel { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; align-items: end; }
+.rolesel label { display: grid; gap: 4px; min-width: 0; } .rolesel select { width: 100%; }
+.rolesel .link { grid-column: 1 / -1; justify-self: start; font-size: 12px; }
 .rolebox { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg2); }
 .rb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .rb-head .oopr { font-size: 12px; color: var(--muted); } .rb-head .oopr b { color: var(--text); }
@@ -838,7 +841,6 @@ dialog::backdrop { background: rgba(3,6,9,.6); backdrop-filter: blur(2px); }
 .rchip[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 16%, var(--bg)); }
 .rchip.tac-r { border-style: dashed; } .rchip.tac-r small { margin-left: 5px; font: 700 9.5px var(--f-mono); letter-spacing: .06em; color: var(--warn); text-transform: uppercase; }
 .rchip:disabled { opacity: .5; cursor: default; }
-.rband { margin: 0 0 6px; padding: 7px 12px; border-left: 3px solid var(--accent); border-radius: 4px; background: var(--raise); font-size: 13px; color: var(--text2); } .rband b { color: var(--text); }
 .slot .bk.rl { color: rgba(255,255,255,.85); font-weight: 600; } .slot .bk.rl.best, .wk .wr.best { opacity: .6; font-weight: 400; }
 .rdot { display: inline-block; width: 5px; height: 5px; margin-left: 4px; border-radius: 50%; background: var(--warn); vertical-align: middle; }
 .wk .wr { font-size: 12px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -887,8 +889,21 @@ dialog::backdrop { background: rgba(3,6,9,.6); backdrop-filter: blur(2px); }
 .d-lists .now { font-size: 12px; color: var(--muted); border-left: 2px solid var(--text2); padding-left: 8px; margin-bottom: 8px; }
 .alts, #recos { overflow-y: auto; min-height: 0; flex: 1; }
 .alt, .tgt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 6px 10px; align-items: center; padding: 9px 4px; border-bottom: 1px solid var(--line); }
-.tgt { grid-template-columns: 18px minmax(0, 1fr) auto auto auto; cursor: pointer; } .tgt:hover, .tgt:focus-within { background: var(--bg2); }
-.tgt .rk { font: 600 12px var(--f-mono); color: var(--muted); text-align: right; }
+.tgt { cursor: pointer; } .tgt:hover, .tgt:focus-within { background: var(--bg2); }
+.tgt { grid-template-columns: 46px minmax(0, 1fr) auto auto; }
+.tgt .rk { font: 600 11px var(--f-mono); color: var(--muted); margin-right: 4px; }
+.tgt .fc { display: grid; place-items: center; align-content: center; width: 40px; height: 38px; border-radius: 9px; border: 2px solid var(--c); font: 700 15px/1 var(--f-mono); color: var(--c); }
+#recos .tgt { padding: 6px 4px; row-gap: 4px; }
+.tgt .fc small { font-size: 10px; font-weight: 600; color: var(--good); margin-top: 2px; } .tgt .fc small.neg { color: var(--bad); }
+.tgt .pls { display: flex; gap: 4px; align-items: center; min-width: 0; margin-top: 2px; }
+.pl { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 99px; font-size: 11px; font-weight: 600; white-space: nowrap; background: var(--raise); color: var(--text2); gap: 5px; flex: none; }
+.pl.pos { font-family: var(--f-mono); background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.pl.pos2 { font-family: var(--f-mono); background: transparent; box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); }
+.pl.age { font-family: var(--f-mono); }
+.pl.club { flex: 0 1 auto; display: inline-block; line-height: 20px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.pl.fam { color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.pl .d { display: inline-flex; gap: 2px; } .pl .d i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .25; } .pl .d i.on { opacity: 1; }
+.tgt .pw .fee { justify-self: end; margin-bottom: 2px; }
 .tgt .pw { display: grid; text-align: right; font: 600 12px var(--f-mono); color: var(--text2); } .tgt .pw span { color: var(--muted); font-weight: 400; }
 #recos .tgt .ios { display: none; } #recos .tgt:hover .ios, #recos .tgt:focus-within .ios { display: grid; }  /* IN / OUT bars on hover or focus only: more rows fit */
 .alt .grip { color: var(--faint); cursor: grab; } .alt[draggable=true] { cursor: grab; }
@@ -3630,7 +3645,7 @@ const cfCrit = () => [...(CF.age_min != null ? [[`Age ${CF.age_min}+`, () => { C
 let OOPF = null, PHASE = 'both', TACI = 0, EDITED = false, pView = null, filtOpen = false;
 // ROLESEL: each slot's in-possession role key, '' = his best role there; null until My Club loads (server default:
 // the save's tactic roles). Pitch pills use ROLE_AB, the full name stays in the title and the slot card.
-let ROLESEL = null;
+let ROLESEL = null, OROLESEL = null;  // OROLESEL: out-of-possession role keys, same rules
 const ROLE_AB = { goalkeeper: 'Goalkeeper', ball_playing_goalkeeper: 'Ball-Play. GK', no_nonsense_goalkeeper: 'No-Nons. GK', centre_back: 'Centre-Back',
   ball_playing_centre_back: 'Ball-Play. CB', no_nonsense_centre_back: 'No-Nons. CB', advanced_centre_back: 'Adv. CB', full_back: 'Full-Back',
   inside_full_back: 'Inside FB', wing_back: 'Wing-Back', inside_wing_back: 'Inside WB', playmaking_wing_back: 'Playm. WB', advanced_wing_back: 'Adv. WB',
@@ -3644,14 +3659,24 @@ const roleName = k => (k && CLUB?.role_names?.[k]) || '';
 // The tactic in use, when the pitch still has its shape: its role keys ('' = none read) and out-of-possession role names.
 const tacOn = () => { const t = CLUB?.tactics?.[TACI]; return t && t.in_possession.join() === formation.join() ? t : null; };
 const tacKeys = () => tacOn()?.role_keys?.map(k => k || '') || Array(11).fill('');
-const roleEdited = i => !!tacOn()?.role_keys && (ROLESEL?.[i] || '') !== tacKeys()[i];
-const rolesChanged = () => ROLESEL ? ROLESEL.filter((_, i) => roleEdited(i)).length : 0;
+const tacOKeys = () => tacOn()?.out_role_keys?.map(k => k || '') || Array(11).fill('');
+const roleEdited = i => !!tacOn()?.role_keys && ((ROLESEL?.[i] || '') !== tacKeys()[i] || (OROLESEL?.[i] || '') !== tacOKeys()[i]);
+const rolesChanged = () => ROLESEL ? ROLESEL.filter((_, i) => roleEdited(i)).length : 0;  // slots changed
 const rolesAt = pos => { const col = pos === 'ST' ? 'stc' : pos.toLowerCase(); return Object.keys(META.role_pos || {}).filter(r => META.role_pos[r].includes(col)); };
 const rolesOn = () => MODE !== 'moneyball' && basis() !== 'performance';
-function setRole(i, k) {
+function setRole(i, k, oop) {
+  const cur = (oop ? OROLESEL : ROLESEL) || Array(11).fill('');
+  if ((cur[i] || '') === k) return;
+  const next = cur.map((x, j) => j === i ? k : x || '');
+  if (oop) OROLESEL = next; else ROLESEL = next;
   if (!ROLESEL) ROLESEL = Array(11).fill('');
-  if ((ROLESEL[i] || '') === k) return;
-  ROLESEL = ROLESEL.map((x, j) => j === i ? k : x || ''); saveClubState(); track('club_role'); refetchClub();
+  if (!OROLESEL) OROLESEL = Array(11).fill('');
+  saveClubState(); track('club_role'); refetchClub();
+}
+function resetSlotRoles(i) {
+  ROLESEL = (ROLESEL || Array(11).fill('')).map((x, j) => j === i ? tacKeys()[i] : x || '');
+  OROLESEL = (OROLESEL || Array(11).fill('')).map((x, j) => j === i ? tacOKeys()[i] : x || '');
+  saveClubState(); refetchClub();
 }
 const GROUP_NAME = { GK: 'Goalkeeper', CB: 'Centre-back', FB: 'Full-back', DM: 'Holding mid', CM: 'Central mid', AM: 'Attacking mid', W: 'Wide', ST: 'Striker' };
 const grpName = pos => GROUP_NAME[SLOT_GRP[pos]] || pos;
@@ -3662,19 +3687,20 @@ const famDots = v => v == null ? '' : `<span class="fdots" title="${FAM_WORD[fam
 const outF = () => OOPF && OOPF.length === 11 ? OOPF : formation;
 const saveStamp = () => `${CLUB?.club_uid}|${META?.game_date}`;
 const clubState = () => ls('fm26_club_state', {});
-const saveClubState = () => lsSet('fm26_club_state', { stamp: saveStamp(), taci: TACI, oop: OOPF, edited: EDITED, roles: ROLESEL });
+const saveClubState = () => lsSet('fm26_club_state', { stamp: saveStamp(), taci: TACI, oop: OOPF, edited: EDITED, roles: ROLESEL, oroles: OROLESEL });
 const savedFormation = () => { const sv = ls('fm26_formation', null); return Array.isArray(sv) && sv.length === 11 ? sv : null; };
 function clubQS(f = formation || savedFormation(), o = OOPF) {
   const pins = Object.entries(PINS).map(([i, u]) => `${i}:${u}`).join(',');
   return [f ? 'formation=' + f.join(',') : '', o ? 'oop=' + o.join(',') : '', 'mode=' + MODE, 'basis=' + basis(), pins ? 'pins=' + pins : '',
-    ROLESEL ? 'roles=' + ROLESEL.join(',') : ''].filter(Boolean).join('&');
+    ROLESEL ? 'roles=' + ROLESEL.join(',') : '', OROLESEL ? 'oroles=' + OROLESEL.join(',') : ''].filter(Boolean).join('&');
 }
 function setPins(p) { PINS = p; EDITED = true; lsSet('fm26_pins', PINS); saveClubState(); refetchClub(); }
 // A card puts back that tactic's two shapes and, for the one in use in the save, its starting XI.
-function applyTactic(i, roles) {
+function applyTactic(i, roles, oroles) {
   const t = CLUB.tactics?.[i]; if (!t) return;
   TACI = i; formation = [...t.in_possession]; OOPF = [...t.out_of_possession]; EDITED = false; slotSel = null; pView = null;
   ROLESEL = roles || (t.role_keys || Array(11).fill('')).map(k => k || '');
+  OROLESEL = oroles || (t.out_role_keys || Array(11).fill('')).map(k => k || '');
   PINS = t.xi ? Object.fromEntries(t.xi.map((u, k) => [k, u]).filter(x => x[1] != null)) : {};
   lsSet('fm26_pins', PINS); saveClubState(); refetchClub();
 }
@@ -3774,7 +3800,7 @@ function capEdit(el, seed) {
 }
 function clubBody() {
   const a = capVal('age_max');
-  return { budget: capVal('budget'), wage_max: capVal('wage_max'), age_max: a ?? 99, gender: gender(), formation, oop: OOPF, roles: ROLESEL, mode: MODE, slot_index: slotSel,
+  return { budget: capVal('budget'), wage_max: capVal('wage_max'), age_max: a ?? 99, gender: gender(), formation, oop: OOPF, roles: ROLESEL, oroles: OROLESEL, mode: MODE, slot_index: slotSel,
     basis: basis(), pins: PINS, search: cfCrit().length ? clubSearchQuery({ ...CF, value_max: null, wage_max: null, age_max: null }) : null };
 }
 const clubSearchQuery = f => query({ search: '', preset: null, shortlist: null, positions: [], similar_to: null, filters: {} }, f);
@@ -3789,9 +3815,9 @@ async function loadClub(force) {
   CLUB = await r.json(); formation = [...CLUB.formation]; PINS = CLUB.pins || {};
   // My Club opens on the save's tactic in use and its XI; edits last while the app is open (CLUB stays loaded).
   // Roles the manager picked survive a reload while the save is the same one.
-  const keptRoles = st.stamp === saveStamp() && Array.isArray(st.roles) && st.roles.length === 11 ? st.roles : null;
-  if (CLUB.tactics?.length) return applyTactic(0, keptRoles);
-  OOPF = null; TACI = 0; EDITED = false; ROLESEL = keptRoles || CLUB.roles.map(k => k || ''); saveClubState();
+  const kept = k => st.stamp === saveStamp() && Array.isArray(st[k]) && st[k].length === 11 ? st[k] : null, keptRoles = kept('roles');
+  if (CLUB.tactics?.length) return applyTactic(0, keptRoles, kept('oroles'));
+  OOPF = null; TACI = 0; EDITED = false; ROLESEL = keptRoles || CLUB.roles.map(k => k || ''); OROLESEL = kept('oroles'); saveClubState();
   if (keptRoles) return refetchClub();
   if (oop) return refetchClub();
   renderClub(); loadRecos();
@@ -3908,12 +3934,17 @@ async function pDetail(uid) {
   if (!PCACHE.has(uid)) PCACHE.set(uid, api(`/api/player/${uid}?mode=${MODE}`).then(r => r.ok ? r.json() : null).catch(() => null));
   return PCACHE.get(uid);
 }
-function attrPanel(p, pos, title, val, role) {
+function attrPanel(p, pos, title, val, role, oop) {
   if (!p || MODE === 'moneyball') return '';
+  if (oop) {  // out of possession: that role's key attributes, all weighted the same
+    const o = META.oop_roles?.[role]; if (!o) return '';
+    return `<div class="ap"><h3>${title}</h3>${o.attributes.map(a => { const v = p['attributes_' + a];
+      return `<div class="ar"><span>${esc(label('attributes_' + a))}</span><i class="fbar"><i style="width:${(v ?? 0) * 5}%;background:${ringC((v ?? 0) * 5)}"></i><u style="left:75%"></u></i><b class="mono">${v ?? 'n/a'}</b></div>`; }).join('')}</div>`;
+  }
   const r = role || rolesAt(pos).sort((a, b) => (p['role_' + b] ?? -1) - (p['role_' + a] ?? -1))[0]; if (!r) return '';
   // ponytail: the tick is a fixed bar (15 for key attributes, 12 for preferred), not what FM's role screen asks; calibrate with roles decoded.
   const rows = [...(META.role_attributes[r] || []).slice(0, 3).map(a => [a, 1]), ...(META.role_secondary?.[r] || []).slice(0, 2).map(a => [a, .5])];
-  return `<div class="ap"><h3>${title}<span>${esc(lastName(p.name))}: ${n0(val)}</span></h3>${rows.map(([a, w]) => { const v = p['attributes_' + a];
+  return `<div class="ap"><h3>${title}</h3>${rows.map(([a, w]) => { const v = p['attributes_' + a];
     return `<div class="ar${w < 1 ? ' pref' : ''}"><span>${esc(label('attributes_' + a))}</span><i class="fbar"><i style="width:${(v ?? 0) * 5}%;background:${ringC((v ?? 0) * 5)}"></i><u style="left:${w < 1 ? 60 : 75}%"></u></i><b class="mono">${v ?? 'n/a'}</b></div>`; }).join('')}</div>`;
 }
 function renderSlotCard() {
@@ -3937,7 +3968,7 @@ function renderSlotCard() {
             <div class="fp-row"><span>Rank by</span><div class="seg" role="group" aria-label="Rank players by">${[['attributes', 'Attributes'], ['performance', 'Performance']].map(([k, l]) =>
               `<button data-basis="${k}" aria-pressed="${basis() === k}"${MODE === 'moneyball' && k === 'attributes' ? ' disabled title="Attributes are off in Moneyball"' : ''}>${l}</button>`).join('')}</div></div>
             <div class="fp-row"><button class="btn es-btn" data-club-es aria-haspopup="dialog">Edit search <b class="badge" id="cfBadge"${cfCrit().length ? '' : ' hidden'}>${cfCrit().length || ''}</b></button><button class="link" data-filters-clear>Clear</button></div></div></div>
-        ${rolesOn() ? `<div class="rband">${t('{a} targets for {b}', { a: `<b>${esc(ROLESEL?.[i] ? roleName(ROLESEL[i]) : 'Best role')}</b>`, b: t(pos) })}</div>` : ''}<div id="recos"></div></div>
+        <div id="recos"></div></div>
     </div>`;
   capsPaint();
   const ab = $('#altsBox'); if (ab) ab.innerHTML = `<h3 class="col-title">Squad alternatives <span class="muted sub-l">by ${fitWord()}</span></h3>
@@ -3946,17 +3977,20 @@ function renderSlotCard() {
           <span class="f mono" style="color:${ringC(a.fit)}">${n0(a.fit)}<small${a.fit < st?.fit ? ' class="neg"' : ''}>${st?.fit != null && a.fit != null ? (a.fit >= st.fit ? '+' : '') + Math.round(a.fit - st.fit) : ''}</small></span>
           <button class="btn start" data-start="${a.uid}" title="Start ${esc(a.name)} at ${pos}">Start</button>
           <div class="ios">${ioBars(a.fit_in, a.fit_out, [st?.fit_in, st?.fit_out])}</div></div>`).join('') : `<p class="muted">Nobody else in the squad can play ${pos}.</p>`}</div>`;
-  if (st) Promise.all([pDetail(st.uid)]).then(([p]) => { const el = $('#dAttrs'); if (el && slotSel === i && !pView) el.innerHTML = attrPanel(p, pos, esc(roleName(st.role)) || 'In possession', st.fit_in, st.role) + attrPanel(p, opos, 'Out of possession', st.fit_out); });
+  if (st) Promise.all([pDetail(st.uid)]).then(([p]) => { const el = $('#dAttrs'); if (el && slotSel === i && !pView) el.innerHTML = attrPanel(p, pos, esc(roleName(st.role)) || 'In possession', st.fit_in, st.role) + attrPanel(p, opos, esc(META.oop_roles?.[st.out_role]?.name || '') || 'Out of possession', st.fit_out, st.out_role, true); });
 }
 // The slot's in-possession role: "Best role" + every role of the position; the tactic's own is dashed and tagged.
 // Off in Moneyball / the performance basis (stats rank players there, not roles).
 function roleBox(i, pos) {
-  const sel = ROLESEL?.[i] || '', tk = tacKeys()[i], on = rolesOn(), oop = tacOn()?.out_roles?.[i];
-  const chip = (k, l) => `<button class="rchip${k && k === tk ? ' tac-r' : ''}" data-role="${k}" aria-pressed="${sel === k}"${on ? '' : ' disabled'}>${esc(l)}${k && k === tk ? '<small>tactic</small>' : ''}</button>`;
-  return `<div class="rolebox"><div class="rb-head"><span class="kick">In possession role</span>
-      ${on && roleEdited(i) && tk ? `<button class="link" data-role="${tk}">${esc(t('Back to {a}', { a: t(roleName(tk)) }))}</button>` : ''}
-      <span class="oopr">Out of possession <b>${esc(oop || 'n/a')}</b></span></div>
-    <div class="rchips">${chip('', 'Best role')}${rolesAt(pos).map(k => chip(k, roleName(k))).join('')}</div></div>`;
+  const on = rolesOn(), opos = outF()[i], tk = tacKeys()[i], tok = tacOKeys()[i];
+  const opt = (k, name, cur, tac) => `<option value="${k}"${cur === k ? ' selected' : ''}>${esc(name)}${k && k === tac ? ` (${t('tactic')})` : ''}</option>`;
+  const sel = (ph, list, cur, tac, name) => `<select class="in" data-role-sel="${ph}"${on ? '' : ' disabled'} aria-label="${ph === 'ip' ? 'In possession role' : 'Out of possession role'}">
+      ${opt('', 'Best role', cur)}${list.map(k => opt(k, name(k), cur, tac)).join('')}</select>`;
+  const ocol = opos === 'ST' ? 'stc' : opos.toLowerCase(), oList = Object.keys(META.oop_roles || {}).filter(k => META.oop_roles[k].pos.includes(ocol));
+  return `<div class="rolesel">
+      <label><span class="kick">In possession</span>${sel('ip', rolesAt(pos), ROLESEL?.[i] || '', tk, roleName)}</label>
+      <label><span class="kick">Out of possession</span>${sel('oop', oList, OROLESEL?.[i] || '', tok, k => META.oop_roles[k].name)}</label>
+      ${on && roleEdited(i) && tacOn()?.role_keys ? `<button class="link" data-role-reset="${i}">Back to the tactic's roles</button>` : ''}</div>`;
 }
 // One player's blended fit in each of the 11 slots: a mini pitch and a ranked list.
 function renderPlayerView(card) {
@@ -3994,6 +4028,10 @@ function recoKeys(p) {
     ...KEY_ATTRS[g].map(a => { const v = p['attributes_' + a];  // 3 colours here (weak / normal / strong), see .reco-legend
       return v != null ? chip(ABBR[a] || a.slice(0, 3), v, v <= 6 ? 'a1' : v >= 15 ? 'a4' : '', `${label('attributes_' + a)} ${v}/20`) : ''; })].join('');
 }
+// FM's familiarity words on its 1-20 scale, with the 4 dots (9 / 12 / 15 / 18) inside the pill.
+const FAM_FM = v => v >= 18 ? ['Natural', C.good] : v >= 15 ? ['Accomplished', C.ok] : v >= 12 ? ['Competent', C.warn] : v >= 9 ? ['Unconvincing', C.muted] : ['Awkward', C.bad];
+const famPill = v => { if (v == null) return ''; const [w, c] = FAM_FM(v);
+  return `<span class="pl fam" style="--c:${c}"><span class="d">${[9, 12, 15, 18].map(x => `<i${v >= x ? ' class="on"' : ''}></i>`).join('')}</span>${w}</span>`; };
 function loadRecos() {
   clearTimeout(recoT);
   recoT = setTimeout(async () => {
@@ -4009,11 +4047,10 @@ function loadRecos() {
     rows.sort((a, b) => (b.fit ?? -1) - (a.fit ?? -1));  // the number shown is what ranks them
     $('#recos').innerHTML = rows.map((p, i) => `
       <div class="tgt" data-player="${p.uid}" role="button" tabindex="0" aria-label="Quick view of ${esc(p.name)}" style="animation-delay:${Math.min(i, 12) * 25}ms">
-        <span class="rk">${i + 1}</span>
-        <div class="who"><b><span class="pname" data-profile="${p.uid}" role="link" tabindex="0" title="Full profile">${esc(p.name)}</span>${famDots(p[posKey(p.target_pos || 'MC')])}</b>
-          <span>${esc(natPos(p.natural_positions) || p.target_pos || '')}, ${p.age}, ${esc(p.club_name || 'Free agent')}</span></div>
-        <span class="pw">${feeHTML(p)}<span>${wage(p.contract_wage)}</span></span>
-        <span class="f mono" style="color:${ringC(p.fit)}">${n0(p.fit)}<small${p.upgrade < 0 ? ' class="neg"' : ''}>${p.upgrade != null && st?.fit != null ? (p.upgrade >= 0 ? '+' : '') + Math.round(p.upgrade) : ''}</small></span>
+        <span class="fc" style="--c:${ringC(p.fit)}">${n0(p.fit)}<small${p.upgrade < 0 ? ' class="neg"' : ''}>${p.upgrade != null && st?.fit != null ? (p.upgrade >= 0 ? '+' : '') + Math.round(p.upgrade) : ''}</small></span>
+        <div class="who"><b><span class="rk">${i + 1}</span><span class="pname" data-profile="${p.uid}" role="link" tabindex="0" title="Full profile">${esc(p.name)}</span></b>
+          <span class="pls">${[...new Set([p.target_pos, ...(p.natural_positions || '').split(';').map(natPos)].filter(Boolean))].slice(0, 2).map((x, k) => `<span class="pl ${k ? 'pos2' : 'pos'}">${esc(natPos(x))}</span>`).join('')}<span class="pl age">${p.age}</span><span class="pl club" title="${esc(p.club_name || 'Free agent')}">${esc(p.club_name || 'Free agent')}</span>${famPill(p[posKey(p.target_pos || 'MC')])}</span></div>
+        <span class="pw"><span class="pl fee">${feeHTML(p)}</span><span>${wage(p.contract_wage)}</span></span>
         <button class="star-btn" data-star="${p.uid}" data-name="${esc(p.name)}" data-club="${p.club_uid ?? ''}" aria-pressed="${shortlist.has(p.uid)}" aria-label="Shortlist ${esc(p.name)}">★</button>
         <div class="ios">${ioBars(p.fit_in, p.fit_out, [st?.fit_in, st?.fit_out])}</div>
       </div>`).join('');
@@ -4822,7 +4859,7 @@ document.addEventListener('click', e => {
   else if (d.capx) capX(d.capx);
   else if (d.start) startAt(+d.start, slotSel);
   else if (d.tactic != null) applyTactic(+d.tactic);
-  else if (d.role != null && slotSel != null && !t.disabled) setRole(slotSel, d.role);
+  else if (d.roleReset != null) resetSlotRoles(+d.roleReset);
   else if (d.phase) { PHASE = d.phase; renderClub(); }
   else if (d.pviewClose != null) { pView = null; renderClub(); }
   else if (d.filters != null) { filtOpen = !filtOpen; renderSlotCard(); loadRecos(); }
@@ -4865,7 +4902,8 @@ document.addEventListener('click', e => { const c = e.target.closest('.cap[data-
 document.addEventListener('keydown', e => { if (!e.target.dataset?.cap) return;  // on the tile: Enter or a digit / currency sign starts typing
   if (e.key === 'Enter') { e.preventDefault(); capEdit(e.target.closest('.cap')); } else if (/^[\d£€$]$/.test(e.key)) { e.preventDefault(); capEdit(e.target.closest('.cap'), e.key); } });
 document.addEventListener('change', e => {
-  if (e.target.id === 'cShape') { formation = [...shapes()[e.target.value]]; OOPF = null; EDITED = true; slotSel = null; pView = null; PINS = {}; ROLESEL = Array(11).fill(''); saveClubState(); renderClub(); refetchClub(); }
+  if (e.target.dataset?.roleSel && slotSel != null) return setRole(slotSel, e.target.value, e.target.dataset.roleSel === 'oop');
+  if (e.target.id === 'cShape') { formation = [...shapes()[e.target.value]]; OOPF = null; EDITED = true; slotSel = null; pView = null; PINS = {}; ROLESEL = Array(11).fill(''); OROLESEL = Array(11).fill(''); saveClubState(); renderClub(); refetchClub(); }
 });
 document.addEventListener('input', e => {
   if (e.target.dataset.cap) { const k = e.target.dataset.cap, st = capStops(k), i = +e.target.value;  // past the last stop = no limit

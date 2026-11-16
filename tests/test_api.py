@@ -236,7 +236,7 @@ def squad(scout, monkeypatch):
     rows += [(100 + i, 2, "stc", 70 + i, 40 + 10 * i) for i in range(3)]  # outside strikers: role score 70-72, performance 40-60
     con = scout.con()
     cols = ", ".join([f"CASE WHEN p = '{c}' THEN 20 ELSE 1 END AS positions_{c}" for c in pos_cols]
-                     + [f"r AS role_{r}" for r in scout.ROLES])
+                     + [f"r AS role_{r}" for r in scout.ROLES] + [f"r AS orole_{r}" for r in scout.OOP_ROLES])
     con.execute("CREATE OR REPLACE TABLE w (uid INT, club_uid INT, p VARCHAR, r DOUBLE, perf DOUBLE)")
     con.executemany("INSERT INTO w VALUES (?, ?, ?, ?, ?)", rows)
     deal = ", ".join(f"0.0 AS {k}_{m}" for k in scout.PER_MODE for m in scout.MODES)
@@ -587,3 +587,12 @@ def test_club_roles_param(squad, client, monkeypatch):
     assert client.get("/api/club").json()["roles"] == ["goalkeeper"] + [None] * 9 + ["poacher"]  # the save's roles by default
     other = "GK DR DC DC DL DM MC MC AMR AML ST"
     assert client.get("/api/club", params={"formation": other.replace(" ", ",")}).json()["roles"] == [None] * 11  # new shape: best roles
+
+
+def test_club_out_of_possession_roles_param(squad, client):
+    g = lambda **p: client.get("/api/club", params=p)
+    r = g(oroles="," * 10 + "tracking_centre_forward").json()
+    assert r["slots"][10]["out_role"] == "tracking_centre_forward" and r["slots"][10]["starter"]["out_role"] == "tracking_centre_forward"
+    assert g(oroles="sweeper_keeper" + "," * 10).status_code == 200
+    assert g(oroles="," * 10 + "sweeper_keeper").status_code == 400  # a keeper role at ST
+    assert g(oroles="nope" + "," * 10).status_code == 400 and g(oroles=",").status_code == 400

@@ -189,6 +189,46 @@ ROLE_SECONDARY = {
 for _r, _attrs in ROLE_SECONDARY.items():
     ROLES[_r][2].update({a: 0.5 for a in _attrs.split() if a not in ROLES[_r][2]})
 ROLE_GROUP = {r: next(g for g, ps in POS.items() if pos[0] in ps) for r, (_, pos, _) in ROLES.items()}
+# FM27 out-of-possession roles: name, the positions they are picked at (out-of-possession shape), key attributes.
+# Source: public FM27 role guides (touchlinefm.com, wonderkidfinder.com, fmportugal.net, Nov 2026), not the game's
+# own role screen: replace with the in-game green/blue attributes when the owner reads them. Covering / Stopping
+# Wide Centre-Back read as their Centre-Back twins in the save, so they share these entries.
+OOP_ROLES = {k: _role(n, ps, a) for k, (n, ps, a) in {
+    "goalkeeper": ("Goalkeeper", "gk", "reflexes positioning handling decisions"),
+    "line_holding_goalkeeper": ("Line-Holding Goalkeeper", "gk", "reflexes positioning handling concentration"),
+    "sweeper_keeper": ("Sweeper Keeper", "gk", "rushing_out anticipation decisions acceleration"),
+    "centre_back": ("Centre-Back", "dc sw", "positioning marking tackling heading"),
+    "covering_centre_back": ("Covering Centre-Back", "dc sw", "anticipation positioning pace concentration"),
+    "stopping_centre_back": ("Stopping Centre-Back", "dc sw", "anticipation tackling decisions strength"),
+    "full_back": ("Full-Back", "dl dr", "positioning marking tackling anticipation"),
+    "pressing_full_back": ("Pressing Full-Back", "dl dr", "work_rate anticipation acceleration decisions"),
+    "holding_full_back": ("Holding Full-Back", "dl dr", "positioning marking concentration tackling"),
+    "wing_back": ("Wing-Back", "wbl wbr", "positioning stamina marking tackling"),
+    "pressing_wing_back": ("Pressing Wing-Back", "wbl wbr", "work_rate acceleration anticipation stamina"),
+    "holding_wing_back": ("Holding Wing-Back", "wbl wbr", "positioning anticipation marking concentration"),
+    "defensive_midfielder": ("Defensive Midfielder", "dm", "positioning anticipation tackling decisions"),
+    "dropping_defensive_midfielder": ("Dropping Defensive Midfielder", "dm", "positioning anticipation marking concentration"),
+    "screening_defensive_midfielder": ("Screening Defensive Midfielder", "dm", "positioning anticipation concentration teamwork"),
+    "central_midfielder": ("Central Midfielder", "mc", "positioning anticipation teamwork tackling"),
+    "pressing_central_midfielder": ("Pressing Central Midfielder", "mc", "work_rate anticipation acceleration stamina"),
+    "screening_central_midfielder": ("Screening Central Midfielder", "mc", "positioning anticipation concentration teamwork"),
+    "wide_covering_central_midfielder": ("Wide Covering Central Midfielder", "mc", "positioning teamwork stamina anticipation"),
+    "wide_midfielder": ("Wide Midfielder", "ml mr", "positioning marking work_rate teamwork"),
+    "tracking_wide_midfielder": ("Tracking Wide Midfielder", "ml mr", "work_rate stamina marking positioning"),
+    "wide_outlet_wide_midfielder": ("Wide Outlet Wide Midfielder", "ml mr", "off_the_ball first_touch acceleration decisions"),
+    "winger": ("Winger", "aml amr", "work_rate positioning teamwork anticipation"),
+    "tracking_winger": ("Tracking Winger", "aml amr", "work_rate stamina marking teamwork"),
+    "inside_outlet_winger": ("Inside Outlet Winger", "aml amr", "off_the_ball anticipation acceleration finishing"),
+    "wide_outlet_winger": ("Wide Outlet Winger", "aml amr", "off_the_ball acceleration first_touch pace"),
+    "attacking_midfielder": ("Attacking Midfielder", "amc", "positioning anticipation teamwork work_rate"),
+    "tracking_attacking_midfielder": ("Tracking Attacking Midfielder", "amc", "work_rate stamina teamwork positioning"),
+    "central_outlet_attacking_midfielder": ("Central Outlet Attacking Midfielder", "amc", "off_the_ball first_touch composure passing"),
+    "splitting_outlet_attacking_midfielder": ("Splitting Outlet Attacking Midfielder", "amc", "off_the_ball anticipation acceleration first_touch"),
+    "centre_forward": ("Centre Forward", "stc", "work_rate anticipation stamina teamwork"),
+    "tracking_centre_forward": ("Tracking Centre Forward", "stc", "work_rate stamina teamwork marking"),
+    "central_outlet_centre_forward": ("Central Outlet Centre Forward", "stc", "first_touch strength off_the_ball balance"),
+}.items()}
+OOP_BY_NAME = {n: k for k, (n, _, _) in OOP_ROLES.items()}
 role_pos_sql = lambda r: ", ".join(f"positions_{p}" for p in ROLES[r][1])
 
 
@@ -198,6 +238,8 @@ def _role_sql():
         expr = " + ".join(f"{v}*attributes_{a}" for a, v in w.items())
         cols.append(f"round(({expr}) * 5.0 / {sum(w.values())}, 1) AS role_{role}")
         fits.append((role, f"CASE WHEN greatest({role_pos_sql(role)}, 0) >= 15 THEN role_{role} END"))
+    for role, (_, _, w) in OOP_ROLES.items():  # out-of-possession role scores, same 0-100 scale
+        cols.append(f"round(({' + '.join(f'attributes_{a}' for a in w)}) * 5.0 / {len(w)}, 1) AS orole_{role}")
     best = "greatest(" + ", ".join(f for _, f in fits) + ")"
     name = "CASE " + " ".join(f"WHEN {f} = best_role_score THEN '{r}'" for r, f in fits) + " END"
     return ", ".join(cols), best, name
@@ -937,7 +979,7 @@ INTERNAL = {f"{p}_{m}" for m in MODES for p in PER_MODE}
 HIDDEN_EXACT = {"pa_gap", "deal_ability", "fair_fee_ability", "fair_wage_ability", "trait_bits", "attributes_consistency",
                 "attributes_important_matches", "attributes_injury_proneness", "attributes_dirtiness",
                 "attributes_versatility"}
-MONEYBALL_PREFIXES = ("attributes_", "role_")
+MONEYBALL_PREFIXES = ("attributes_", "role_", "orole_")
 MONEYBALL_EXACT = {"attr_avg", "best_role", "best_role_score", "deal_attributes", "fair_fee_attributes",
                    "fair_wage_attributes", "left_foot", "right_foot"}
 MODE_HIDDEN = VISIBLE = {}
@@ -1331,6 +1373,7 @@ def meta():
             "role_pos": {r: ps for r, (_, ps, _) in ROLES.items()},
             # Key attributes per role, heaviest first (for showing why a role score is what it is).
             "role_attributes": {r: [a for a, v in w.items() if v == 1] for r, (_, _, w) in ROLES.items()},  # key (green)
+            "oop_roles": {r: {"name": n, "pos": ps, "attributes": list(w)} for r, (n, ps, w) in OOP_ROLES.items()},
             "role_secondary": {r: [a for a, v in w.items() if v < 1] for r, (_, _, w) in ROLES.items()},  # preferred (blue), weight 0.5
             "stat_groups": list(STAT_METRICS),
             "role_stats": {k: [l, u, low] for k, (l, u, _, low) in ROLE_STATS.items()}, "role_limit_pct": ROLE_LIMIT_PCT,
@@ -1636,15 +1679,26 @@ def _blend(fin, fout):
     return None if fin is None else round(fin if fout is None else IN_WEIGHT * fin + (1 - IN_WEIGHT) * fout, 1)
 
 
-def slot_fit_sql(pos, opos, mode="full", basis="attributes", role=None):
-    """Fit at a tactic slot that plays `pos` with the ball and `opos` without it. Who may play the slot is decided by
-    the in-possession position (familiarity >= 15, as fit_sql); the out-of-possession part is the role score there,
-    without that gate (a winger who drops into midfield need not be a natural midfielder)."""
-    if opos == pos and not role:
+def ofit_sql(opos, mode="full", basis="attributes", orole=None):
+    """0-100 out-of-possession fit at `opos`: the slot's out-of-possession role (OOP_ROLES key) or, without one, his
+    best out-of-possession role there. No familiarity gate. Positions with no such role (SW) use fit_sql."""
+    if mode == "moneyball" or basis == "performance":
+        return "stat_score"
+    col = SLOT_COL.get(opos, opos.lower())
+    roles = [orole] if orole else [r for r, (_, ps, _) in OOP_ROLES.items() if col in ps]
+    return f"greatest({', '.join(f'orole_{r}' for r in roles)})" if roles else fit_sql(opos, mode, basis, False)
+
+
+def slot_fit_sql(pos, opos, mode="full", basis="attributes", role=None, orole=None):
+    """Fit at a tactic slot that plays `pos` with the ball and `opos` without it: 55% the in-possession role score,
+    45% the out-of-possession one (ofit_sql). Who may play the slot is decided by the in-possession position
+    (familiarity >= 15, as fit_sql); the out-of-possession part has no gate (a winger who drops into midfield need
+    not be a natural midfielder)."""
+    if mode == "moneyball" or basis == "performance":
         return fit_sql(pos, mode, basis)
     col = "stc" if pos == "ST" else pos.lower()
     return (f"CASE WHEN positions_{col} >= 15 THEN {IN_WEIGHT} * ({fit_sql(pos, mode, basis, False, role)}) "
-            f"+ {1 - IN_WEIGHT:.2f} * ({fit_sql(opos, mode, basis, False)}) END")
+            f"+ {1 - IN_WEIGHT:.2f} * ({ofit_sql(opos, mode, basis, orole)}) END")
 
 
 def read_club(path):
@@ -1697,13 +1751,32 @@ def _roles(roles, formation):
     return out
 
 
+def _oroles(formation, oop, oroles=None):
+    """Each slot's out-of-possession role (OOP_ROLES key, "" / None = his best one at that position). None (no list):
+    the saved tactic's, while the pitch has its two shapes."""
+    if oroles is None:
+        tac = (_club().get("tactics") or [{}])[0]
+        if tac.get("in_possession") != formation or tac.get("out_of_possession") != oop or "out_roles" not in tac:
+            return [None] * 11
+        return [OOP_BY_NAME.get(n) for n in tac["out_roles"]]
+    if len(oroles) != 11:
+        raise HTTPException(400, "oroles needs 11 entries")
+    out = []
+    for pos, r in zip(oop, oroles):
+        r = r or None
+        if r and (r not in OOP_ROLES or SLOT_COL.get(pos, pos.lower()) not in OOP_ROLES[r][1]):
+            raise HTTPException(400, f"out-of-possession role {r} does not fit {pos}")
+        out.append(r)
+    return out
+
+
 def _basis(basis, mode):
     if basis not in BASES:
         raise HTTPException(400, "basis must be attributes or performance")
     return "performance" if mode == "moneyball" else basis
 
 
-def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None, roles=None):
+def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None, roles=None, oroles=None):
     """pins: {slot index: uid} the manager put there himself; the rest of the XI is picked around them.
     oop: the out-of-possession position of each slot (FM's second shape); None = the same as `formation`.
     roles: each slot's in-possession role (ROLES key, None = best role at the position).
@@ -1711,32 +1784,34 @@ def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None
     club = _club()
     oop = oop or formation
     roles = roles or [None] * 11
-    pairs = sorted(set(zip(formation, oop, roles)), key=str)
-    key = {pr: f"{pr[0]}_{pr[1]}_{pr[2] or 'best'}" for pr in pairs}
+    oroles = _oroles(formation, oop, oroles)
+    pairs = sorted(set(zip(formation, oop, roles, oroles)), key=str)
+    key = {pr: f"{pr[0]}_{pr[1]}_{pr[2] or 'best'}_{pr[3] or 'best'}" for pr in pairs}
     poss = sorted(set(formation) | set(oop))
     cur = con().execute(f"SELECT uid, name, age, ability_current AS ca, ability_potential AS pa, transfer_value, contract_wage, natural_positions, "
-                        f"{', '.join(f'{slot_fit_sql(a, b, mode, basis, r)} AS fit_{key[(a, b, r)]}, {fit_sql(a, mode, basis, False, r)} AS rin_{key[(a, b, r)]}' for a, b, r in pairs)}, "
-                        f"{', '.join(f'{fit_sql(p, mode, basis, False)} AS raw_{p}' for p in poss)}, "
+                        f"{', '.join(f'{slot_fit_sql(a, b, mode, basis, r, o)} AS fit_{key[(a, b, r, o)]}, {fit_sql(a, mode, basis, False, r)} AS rin_{key[(a, b, r, o)]}, {ofit_sql(b, mode, basis, o)} AS rout_{key[(a, b, r, o)]}' for a, b, r, o in pairs)}, "
                         f"{', '.join(f'positions_{SLOT_COL.get(p, p.lower())} AS fam_{p}' for p in poss)}, "
-                        f"{', '.join(f'role_{r}' for r in ROLES)} FROM players WHERE club_uid = ?", [club["club_uid"]])
+                        f"{', '.join(f'role_{r}' for r in ROLES)}, {', '.join(f'orole_{r}' for r in OOP_ROLES)} FROM players WHERE club_uid = ?", [club["club_uid"]])
     names = [d[0] for d in cur.description]
     squad = [dict(zip(names, r)) for r in cur.fetchall()]
 
     def card(p, pr):
         if not p:
             return None
-        pos, opos, role = pr
+        pos, opos, role, orole = pr
         fam = p[f"fam_{pos}"]
         col = SLOT_COL.get(pos, pos.lower())  # the role he is rated in: the slot's, else his best there
         role = role or max((r for r, (_, ps, _) in ROLES.items() if col in ps), key=lambda r: p[f"role_{r}"] or -1, default=None)
+        ocol = SLOT_COL.get(opos, opos.lower())
+        orole = orole or max((r for r, (_, ps, _) in OOP_ROLES.items() if ocol in ps), key=lambda r: p[f"orole_{r}"] or -1, default=None)
         c = {"uid": p["uid"], "name": p["name"], "age": p["age"], "fit": p[f"fit_{key[pr]}"], "wage": p["contract_wage"], "value": p["transfer_value"],
              "familiarity": fam, "out_of_position": (fam or 0) < 15, "natural": (p["natural_positions"] or "").split(";")[0] or None,
-             "fit_in": p[f"rin_{key[pr]}"] if (fam or 0) >= 15 else None, "role": role, "fit_out": p[f"raw_{opos}"] if (fam or 0) >= 15 else None}
+             "fit_in": p[f"rin_{key[pr]}"] if (fam or 0) >= 15 else None, "role": role, "out_role": orole, "fit_out": p[f"rout_{key[pr]}"] if (fam or 0) >= 15 else None}
         return {**c, "ca": p["ca"], "pa": p["pa"]} if mode == "full" else c
     # Who can play a slot = familiarity >= 15 at its in-possession position, whatever the fit: on the performance basis
     # a player under PERF_MIN minutes has no index (fit None) but can still start there, ranked after those with one.
     ranked = {pr: sorted((s for s in squad if (s[f"fam_{pr[0]}"] or 0) >= 15), key=lambda s: -(s[f"fit_{key[pr]}"] if s[f"fit_{key[pr]}"] is not None else -1)) for pr in pairs}
-    slot_pr = list(zip(formation, oop, roles))
+    slot_pr = list(zip(formation, oop, roles, oroles))
     taken, starters = set(), {}
     by_uid = {s["uid"]: s for s in squad}
     for i, uid in (pins or {}).items():  # a pin only holds if he can play there and isn't pinned twice
@@ -1762,7 +1837,7 @@ def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None
         backup = next((s for s in ranked[pr] if s["uid"] not in taken), None)
         sf, bf = fits[i], (backup[f"fit_{key[pr]}"] or 0) if backup else 0
         need = round((team_fit - sf) + 0.3 * (sf - bf), 1)
-        slots.append({"slot_index": i, "pos": pr[0], "out_pos": pr[1], "role": pr[2], "starter": card(st, pr), "backup": card(backup, pr),
+        slots.append({"slot_index": i, "pos": pr[0], "out_pos": pr[1], "role": pr[2], "out_role": pr[3], "starter": card(st, pr), "backup": card(backup, pr),
                       "pinned": i in (pins or {}) and st is not None and st["uid"] == pins[i],
                       "depth": len(ranked[pr]), "need": need,
                       # everyone else who can play there, best first (starters elsewhere included: the manager decides)
@@ -1775,13 +1850,14 @@ def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None
     xi = {starters[i]["uid"]: i for i in starters if starters[i]}
     return {"club_uid": club["club_uid"], "club_name": club["club_name"], "formation": formation, "out_formation": oop, "formation_name": shape, "roles": roles,
             "mode": mode, "basis": basis, "pins": {i: s["starter"]["uid"] for i, s in enumerate(slots) if s["pinned"]}, "shapes": {k: v.split() for k, v in SHAPES.items()}, "slots": slots, "team_fit": round(team_fit, 1),
-            "tactics": [{**t, "role_keys": [ROLE_BY_NAME.get(n) for n in t["roles"]]} if "roles" in t else t for t in club.get("tactics", [])],
+            "tactics": [{**t, "role_keys": [ROLE_BY_NAME.get(n) for n in t["roles"]], "out_role_keys": [OOP_BY_NAME.get(n) for n in t.get("out_roles") or [None] * 11]}
+                        if "roles" in t else t for t in club.get("tactics", [])],
             "role_names": {r: n for r, (n, _, _) in ROLES.items()},
             # the player view: each squad player's blended fit in every slot, whatever his familiarity there (fam says
             # how well he knows the slot's in-possession position; under 15 he can't be picked for it)
             "squad": [{"uid": p["uid"], "name": p["name"], "age": p["age"], "slot": xi.get(p["uid"]),
-                       "fits": [_blend(p[f"rin_{key[pr]}"], p[f"raw_{pr[1]}"]) for pr in slot_pr],
-                       "fam": [p[f"fam_{a}"] for a, _, _ in slot_pr]} for p in squad],
+                       "fits": [_blend(p[f"rin_{key[pr]}"], p[f"rout_{key[pr]}"]) for pr in slot_pr],
+                       "fam": [p[f"fam_{a}"] for a, *_ in slot_pr]} for p in squad],
             # No default budget / wage cap (a silent one hid most targets): the UI's money sliders run 0 -> /api/meta's max.
             "gender": gender, "top_wage": wages[0] if wages else 0,
             "xi_median_wage": xi_wages[len(xi_wages) // 2] if xi_wages else 0}
@@ -1789,9 +1865,10 @@ def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None
 
 @app.get("/api/club")
 def club(formation: str | None = None, mode: str = "full", fair_play: bool = False, basis: str = "attributes", pins: str = "",
-         oop: str | None = None, roles: str | None = None):
+         oop: str | None = None, roles: str | None = None, oroles: str | None = None):
     """pins: "slot:uid,slot:uid". oop: the out-of-possession shape, comma-separated like formation.
-    roles: each slot's in-possession role key, comma-separated, empty = best role (omitted = the saved tactic's)."""
+    roles / oroles: each slot's in-possession / out-of-possession role key, comma-separated, empty = best role
+    (omitted = the saved tactic's)."""
     mode = _mode(mode, fair_play)
     try:
         pin_map = {int(i): int(u) for i, u in (x.split(":") for x in pins.split(",") if x)}
@@ -1799,8 +1876,9 @@ def club(formation: str | None = None, mode: str = "full", fair_play: bool = Fal
         raise HTTPException(400, "pins must be slot:uid pairs")
     telemetry.record("club", mode)
     f = _formation(formation.split(",") if formation else None)
-    return squad_report(f, mode, _basis(basis, mode), pin_map, _oop(oop.split(",") if oop else None),
-                        _roles(roles.split(",") if roles is not None else None, f))
+    o = _oop(oop.split(",") if oop else None)
+    return squad_report(f, mode, _basis(basis, mode), pin_map, o, _roles(roles.split(",") if roles is not None else None, f),
+                        oroles.split(",") if oroles is not None else None)
 
 
 @app.get("/api/clubs")
@@ -1845,6 +1923,7 @@ class TargetQuery(BaseModel):
     pins: dict[int, int] = {}       # slot index -> uid the manager started there himself
     oop: list[str] | None = None    # out-of-possession shape (None = same as formation)
     roles: list[str] | None = None  # each slot's in-possession role key, "" = best role (None = the saved tactic's)
+    oroles: list[str] | None = None  # same for the out-of-possession role (OOP_ROLES keys)
     search: Query | None = None     # Edit search criteria (positions ignored: the slot decides)
 
 
@@ -1861,9 +1940,10 @@ def targets(q: TargetQuery, rep, slots, per_pos, min_rating, extra_where=""):
     wage_ref = max(rep["xi_median_wage"], 1)
     rows = []
     for s in slots:
-        pos, opos, role, sf = s["pos"], s.get("out_pos", s["pos"]), s.get("role"), (s["starter"] or {}).get("fit") or 0
+        pos, opos, role, orole = s["pos"], s.get("out_pos", s["pos"]), s.get("role"), s.get("out_role")
+        sf = (s["starter"] or {}).get("fit") or 0
         col = "stc" if pos == "ST" else pos.lower()
-        fit = slot_fit_sql(pos, opos, mode, q.basis, role)
+        fit = slot_fit_sql(pos, opos, mode, q.basis, role, orole)
         where = [f"positions_{col} >= {min_rating}", f"({fit}) > ?", "coalesce(club_uid, -1) <> ?",
                  "(transfer_value > 0 OR free_agent)"]
         args = [sf + 2, club["club_uid"]]
@@ -1883,7 +1963,7 @@ def targets(q: TargetQuery, rep, slots, per_pos, min_rating, extra_where=""):
         # Fit/score are computed on the full table (moneyball fit uses positions_*), then rows come back mode-filtered.
         cur = con().execute(f"""SELECT v.*, t.fit, t.fit_in, t.fit_out, t.score FROM {source(mode)} v JOIN (
                                    SELECT uid, {fit} AS fit, {fit_sql(pos, mode, q.basis, False, role)} AS fit_in,
-                                          {fit_sql(opos, mode, q.basis, False)} AS fit_out, {score} AS score FROM (SELECT p.*, d.deal_score FROM players p
+                                          {ofit_sql(opos, mode, q.basis, orole)} AS fit_out, {score} AS score FROM (SELECT p.*, d.deal_score FROM players p
                                        JOIN (SELECT uid, deal_score_{mode} AS deal_score FROM players) d USING (uid))
                                    WHERE {' AND '.join(where)} {extra_where} ORDER BY score DESC LIMIT {per_pos}) t USING (uid)""", args)
         names = [d[0] for d in cur.description]
@@ -1911,7 +1991,7 @@ def _prepare(q: TargetQuery):
     q.mode = _mode(q.mode, q.fair_play)
     q.basis = _basis(q.basis, q.mode)
     f = _formation(q.formation)
-    rep = squad_report(f, q.mode, q.basis, q.pins, _oop(q.oop), _roles(q.roles, f))
+    rep = squad_report(f, q.mode, q.basis, q.pins, _oop(q.oop), _roles(q.roles, f), q.oroles)
     if q.gender is None:
         q.gender = rep["gender"]
     if q.age_max is None:
