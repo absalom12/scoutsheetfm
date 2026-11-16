@@ -1561,11 +1561,14 @@ def save_info(name: str, game: str = "FM26", club: bool = False):
         raise HTTPException(400, str(e))
 
 
+UPDATE_FAILED = updater.last_failure() if sys.platform == "win32" else None  # read once: the log is then set aside
+
+
 @app.get("/api/status")
 def status():
     busy = _ingest_lock.locked()
     return {"app": "scoutsheet", "status": STATUS, "version": VERSION, "progress": dict(PROGRESS) if busy else None,
-            "can_update": updater.bundle() is not None, "update": dict(updater.STATE)}
+            "can_update": updater.bundle() is not None, "update": dict(updater.STATE), "update_failed": UPDATE_FAILED}
 
 
 @app.post("/api/update")

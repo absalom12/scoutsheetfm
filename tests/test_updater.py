@@ -80,3 +80,46 @@ def test_update_downloads_check_certificates_against_certifi():
     # A bundled macOS app has no system root certificates: without certifi's, every download fails.
     assert updater.TLS.cert_store_stats()["x509_ca"] > 100
     assert updater.TLS.verify_mode == ssl.CERT_REQUIRED and updater.TLS.check_hostname
+
+
+def test_last_failure_reads_the_log_once(tmp_path, monkeypatch):
+    monkeypatch.setenv("SCOUTSHEET_DATA_DIR", str(tmp_path))
+    assert updater.last_failure() is None  # no log: nothing to say
+    log = tmp_path / updater.LOG
+    log.write_text("2026-11-16T10:00:00 start: a -> b\n2026-11-16T10:00:20 RESULT failed: the app folder stayed locked: denied\n")
+    assert updater.last_failure() == "the app folder stayed locked: denied"
+    assert not log.exists() and (tmp_path / "update.log.prev").exists()  # shown once
+    log.write_text("2026-11-16T10:00:00 start\n2026-11-16T10:00:01 RESULT ok\n")
+    assert updater.last_failure() is None
+    log.write_text("2026-11-16T10:00:00 start\n")  # the script died before the end
+    assert updater.last_failure() == "the update did not finish"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="the swap script is Windows PowerShell")
+@pytest.mark.parametrize("locked", [False, True])
+def test_swap_ps1_swaps_or_rolls_back(tmp_path, locked):
+    """Runs the real swap.ps1 on a fake app folder (CI windows-latest). A file held open in the current app folder
+    stands for antivirus or WebView2: the swap must give up, keep the old app and log why."""
+    exe = shutil.which("hostname.exe")
+    cur, work = tmp_path / "ScoutSheet", tmp_path / ".scoutsheet-update-x"
+    new = work / "new" / "ScoutSheet"
+    for d, tag in ((cur, "old"), (new, "new")):
+        d.mkdir(parents=True)
+        shutil.copy(exe, d / "ScoutSheet.exe")
+        (d / "version.txt").write_text(tag)
+    (work / "swap.ps1").write_text(updater.SWAP_PS1, encoding="utf-8")
+    log = tmp_path / "update.log"
+    held = open(cur / "version.txt") if locked else None
+    try:
+        dying = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(1)"])
+        subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(work / "swap.ps1"),
+                        "-ProcId", str(dying.pid), "-Cur", str(cur), "-New", str(new), "-Target", str(cur),
+                        "-Work", str(work), "-Log", str(log), "-Tries", "5"], check=True, timeout=120)
+    finally:
+        if held:
+            held.close()
+    result = [l for l in log.read_text().splitlines() if " RESULT " in l][-1]
+    if locked:
+        assert "RESULT failed" in result and (cur / "version.txt").read_text() == "old"
+    else:
+        assert result.endswith("RESULT ok") and (cur / "version.txt").read_text() == "new"

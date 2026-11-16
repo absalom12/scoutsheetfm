@@ -33,7 +33,7 @@ def test_data_routes_409_loading(scout, client):
 
 def test_status_identifies_app(client):
     assert client.get("/api/status").json() == {"app": "scoutsheet", "status": "empty", "version": "dev", "progress": None,
-                                                 "can_update": False, "update": {"state": None, "pct": 0, "error": None}}
+                                                 "can_update": False, "update": {"state": None, "pct": 0, "error": None}, "update_failed": None}
 
 
 def test_status_reports_progress_while_busy(scout, client):

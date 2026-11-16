@@ -12,22 +12,43 @@ TLS = ssl.create_default_context(cafile=certifi.where())
 STATE = {"state": None, "pct": 0, "error": None}  # state: None | downloading | installing | restarting | error
 
 # Windows can't move the folder of a running exe: this runs once the app has exited. Moves are retried while
-# antivirus or WebView2 still hold a file; the old app is put back if the new one can't take its place.
-SWAP_PS1 = r"""param($ProcId, $Cur, $New, $Target, $Work)
+# antivirus or WebView2 still hold a file; the old app is put back if the new one can't take its place. Every step
+# goes to $Log (update.log in the data folder) and the last line is "RESULT ok" or "RESULT failed: <why>": the next
+# launch reads it, so a silent failure shows as a message instead of the same "update available" banner.
+SWAP_PS1 = r"""param($ProcId, $Cur, $New, $Target, $Work, $Log = (Join-Path $env:TEMP 'scoutsheet-update.log'), $Tries = 150)
+function L($m) { Add-Content -LiteralPath $Log -Value ((Get-Date -Format s) + ' ' + $m) -ErrorAction SilentlyContinue }
+L "start: $Cur -> $Target"
 Wait-Process -Id $ProcId -ErrorAction SilentlyContinue
+# Anything still running from the app folder (a second window, a stuck helper) keeps it locked: wait for it too.
+for ($i = 0; $i -lt 100 -and (Get-Process | Where-Object { $_.Path -and $_.Path.StartsWith($Cur + '\') }); $i++) { Start-Sleep -Milliseconds 200 }
 $old = Join-Path $Work 'old'
-for ($i = 0; $i -lt 100 -and -not (Test-Path -LiteralPath $old); $i++) {
-  try { Move-Item -LiteralPath $Cur -Destination $old -ErrorAction Stop } catch { Start-Sleep -Milliseconds 200 }
+$why = $null
+for ($i = 0; $i -lt $Tries -and -not (Test-Path -LiteralPath $old); $i++) {
+  try { Move-Item -LiteralPath $Cur -Destination $old -ErrorAction Stop } catch { $why = $_.Exception.Message; Start-Sleep -Milliseconds 200 }
 }
 $app = $Cur
 if (Test-Path -LiteralPath $old) {
-  try { Move-Item -LiteralPath $New -Destination $Target -ErrorAction Stop; $app = $Target }
-  catch { Move-Item -LiteralPath $old -Destination $Cur }
-}
+  try { Move-Item -LiteralPath $New -Destination $Target -ErrorAction Stop; $app = $Target; L 'RESULT ok' }
+  catch { L ('RESULT failed: new version could not be moved in: ' + $_.Exception.Message); Move-Item -LiteralPath $old -Destination $Cur }
+} else { L ('RESULT failed: the app folder stayed locked: ' + $why) }
 Start-Process -FilePath (Get-ChildItem -LiteralPath $app -Filter *.exe | Select-Object -First 1).FullName
 Start-Sleep -Seconds 2
 Remove-Item -LiteralPath $Work -Recurse -Force -ErrorAction SilentlyContinue
 """
+LOG = "update.log"
+
+
+def last_failure():
+    """Why the last Windows update did not install, once (the log is then set aside), or None."""
+    from datadir import data_dir
+    log = data_dir() / LOG
+    try:
+        lines = [l for l in log.read_text(encoding="utf-8", errors="replace").splitlines() if " RESULT " in l]
+        log.replace(log.with_suffix(".log.prev"))
+    except OSError:
+        return None
+    last = lines[-1].split(" RESULT ", 1)[1] if lines else "failed: the update did not finish"
+    return last.split(": ", 1)[1] if last.startswith("failed") else None
 
 
 def bundle():
@@ -120,12 +141,17 @@ def relaunch(current, new, target, work):
     if sys.platform == "win32":
         subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden",
                           "-File", str(work / "swap.ps1"), "-ProcId", str(os.getpid()), "-Cur", str(current),
-                          "-New", str(new), "-Target", str(target), "-Work", str(work)],
+                          "-New", str(new), "-Target", str(target), "-Work", str(work), "-Log", str(_log())],
                          creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
                          | subprocess.CREATE_NO_WINDOW)
         return
     subprocess.Popen(["/bin/sh", "-c", 'while kill -0 "$0" 2>/dev/null; do sleep .2; done; rm -rf "$1"; open "$2"',
                       str(os.getpid()), str(work), str(target)], start_new_session=True)
+
+
+def _log():
+    from datadir import data_dir
+    return data_dir() / LOG
 
 
 def quit_app():

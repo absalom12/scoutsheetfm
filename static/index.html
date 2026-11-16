@@ -354,13 +354,6 @@ details[open] summary::before { content: "−"; }
 .kpi.vt { box-shadow: inset 0 2px 0 var(--wc); }  /* the tile's edge takes the colour of its verdict line */
 .pp-head .kpi.vt { min-width: 0; max-width: 128px; padding: 3px 8px 4px; } .pp-head .kpi.vt b { font-size: 16px; } .pp-head .kpi.vt > span { font-size: 9.5px; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi small.na::first-letter { text-transform: none; } .kpi b .kw { font: 700 13px/21px var(--f-body); color: var(--text); text-transform: none; letter-spacing: 0; }  /* a word in place of a number */
-.rl-vs { margin: 0 0 8px; padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
-.rl-vs p { margin: 0; font-size: 12.5px; color: var(--text2); white-space: nowrap; } .rl-vs p b { color: var(--text); } .rl-vs p s { display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--gold); transform: rotate(45deg); border-radius: 1px; }
-.rl-tr { position: relative; height: 6px; margin: 0 8px; border-radius: 3px; background: var(--line); }
-.rl-tr .gap { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, var(--gold), var(--mode)); }
-.rl-tr .mk { position: absolute; top: -4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; }
-.rl-tr .me { background: var(--mode); border: 2px solid var(--panel); } .rl-tr .st { background: var(--gold); border-radius: 2px; transform: rotate(45deg) scale(.8); }
-.fb > i > s.rv { position: absolute; top: -2px; width: 11px; height: 11px; margin-left: -5.5px; background: var(--gold); transform: rotate(45deg) scale(.75); border-radius: 2px; z-index: 2; text-decoration: none; }
 .pp-act { display: flex; gap: 8px; align-items: center; flex: none; }
 .pp-body { flex: 1; min-height: 0; display: grid; gap: 10px; margin-top: 10px; }
 /* left column: Role fit over its own Similar players panel */
@@ -431,7 +424,16 @@ details[open] summary::before { content: "−"; }
 .vread { margin: 4px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--text2); }
 .dv-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; } .dv-head small { font-size: 11.5px; color: var(--muted); }
 /* Scouting report page (Full): 3 x 2 analysis cards. rs-* = shared rows, ra = profile, vs = attributes vs output, tf = tactical fit, rk = risks, ru = usage. */
-.pg-report.m-full, .pg-report.m-fair { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+.pg-report.m-full, .pg-report.m-fair { grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto; align-items: start; }
+.rl-r:hover, .rl-u:hover { background: var(--bg2); }
+.rid { display: grid; justify-items: center; gap: 4px; } .rid .radar { width: 100%; max-width: 210px; height: auto; overflow: visible; margin: 14px 0 10px; } .rid .radar text { font-size: 9px; fill: var(--text2); }
+.rid-n { margin: 6px 0 4px; font: 700 26px/1.05 var(--f-display); text-transform: uppercase; text-align: center; }
+.rid-l { display: flex; gap: 8px; align-items: baseline; margin: 0; font-size: 14px; } .rid-l span { font: 700 10.5px var(--f-display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); } .rid-l b { font-family: var(--f-mono); }
+.rlist h4 { margin: 10px 0 2px; font: 700 11px var(--f-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); } .rlist h4:first-child { margin-top: 0; }
+.rl-r, .rl-u { display: flex; align-items: center; gap: 10px; min-height: 36px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.rl-r b, .rl-u b { margin-left: auto; font: 600 14.5px var(--f-mono); white-space: nowrap; }
+.rl-r i { width: 8px; height: 8px; border-radius: 50%; flex: none; } .rl-r i.pro { background: var(--good); } .rl-r i.con { background: var(--orange, var(--warn)); }
+.rl-u span { font: 700 10.5px var(--f-display); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .pg-report .pp-card { padding: 10px 16px; } .pg-report .pp-card h3 { font-size: 14px; margin-bottom: 5px; } .pg-report .pp-card > .note { margin-top: auto; padding-top: 6px; }
 .pg-report [title] { cursor: help; }
 .rs-a { font-size: 12.5px; color: var(--text2); white-space: nowrap; } .rs-a b { font: 700 12.5px var(--f-mono); }
@@ -565,6 +567,23 @@ table.reg td { padding: 4px 6px; border-bottom: 1px solid var(--line); color: va
 .scat text { font: 600 11px var(--f-body); fill: var(--text2); } .scat .ax { font: 500 10px var(--f-mono); fill: var(--muted); }
 .scat .pt[data-pp-uid] { cursor: pointer; } .scat .pt[data-pp-uid]:hover circle { stroke: var(--text); stroke-width: 2; }
 .scat .me text { fill: var(--mode); font-weight: 700; }
+/* All stats card (variant B): a rail of phases, one phase table at a time, rows by rank. */
+.ast2 { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 14px; }
+.ast-rail { display: grid; align-content: start; gap: 4px; }
+.ast-tab { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 10px; border-left: 3px solid transparent; border-radius: 6px; text-align: left; font-size: 13.5px; color: var(--text2); }
+.ast-tab b { font: 700 14px var(--f-mono); } .ast-tab:hover { background: var(--bg2); }
+.ast-tab[aria-selected="true"] { border-left-color: var(--accent); background: var(--raise); color: var(--text); font-weight: 600; }
+.ast-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ast-main { display: grid; align-content: start; min-width: 0; }
+.ast-row { display: grid; grid-template-columns: minmax(0, 1fr) 96px 64px minmax(80px, 200px) 40px; gap: 12px; align-items: center; min-height: 38px; padding: 2px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.ast-row > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ast-row b, .ast-row em { font: 600 14px var(--f-mono); font-style: normal; text-align: right; white-space: nowrap; } .ast-row em { color: var(--text2); font-weight: 500; }
+.ast-row.ast-hd { min-height: 22px; font: 700 10.5px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ast-row.ast-hd b, .ast-row.ast-hd em { font: inherit; color: inherit; } .ast-row .ast-bh { grid-column: 4 / 6; text-align: right; }
+.ast-bar { position: relative; height: 6px; border-radius: 3px; background: var(--raise); } .ast-bar > i { display: block; height: 100%; border-radius: 3px; background: var(--c, var(--muted)); }
+.ast-bar u { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+.ast-rk { justify-self: end; min-width: 30px; padding: 1px 6px; border-radius: 5px; text-align: center; font: 700 12px var(--f-mono); color: #04110a; background: var(--c, var(--raise)); }
+.ast-rk:not([style]) { color: var(--muted); }
 /* All stats card: phases flow in balanced columns; strong rows light up, weak rows glow red, the rest stays quiet. */
 .ast-hl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-bottom: 6px; font-size: 11.5px; }
 .ast-hl .pill { display: inline-block; padding: 1px 8px; font: 600 11.5px var(--f-body); } .ast-hl .pill b { font-family: var(--f-mono); }
@@ -2486,27 +2505,6 @@ const ARCH = {
     adj: { 'Shot stopping': 'Agile', Aerial: 'Commanding', Distribution: 'Ball-playing', Sweeping: 'Proactive', Organising: 'Vocal' }, badj: { Mentality: () => 'Composed' } },
 };
 const ARCH_RULE = 'Area = average of its attributes (see the radar). Noun = his best football area. Adjective = his best of pace, physical and mentality when 14+, otherwise his second football area when 13+. "All-rounder" when his top three football areas are within 1 point.';
-function secArch() {
-  const { p, grp } = ppx, gk = grp === 'GK', A = ARCH[gk ? 'gk' : 'out'];
-  const ax = (gk ? AXES_GK : AXES_OUT).map(([n, ks]) => [n, rsAvg(ks) ?? 0]);
-  const skill = ax.filter(x => !A.body.includes(x[0])).sort((x, y) => y[1] - x[1]), body = ax.filter(x => A.body.includes(x[0])).sort((x, y) => y[1] - x[1]);
-  const adj = body[0][1] >= 14 ? A.badj[body[0][0]](body[0][1]) : skill[1][1] >= 13 ? A.adj[skill[1][0]] : '';
-  const noun = skill[0][1] - skill[2][1] <= 1 ? 'all-rounder' : A.noun[skill[0][0]];
-  const t = `${adj} ${noun}`.trim(), low = [...ax].sort((x, y) => x[1] - y[1])[0];
-  const pool = grp === 'GK' ? [...ATTR.goalkeeping, ...ATTR.mental, ...ATTR.physical] : [...ATTR.technical, ...ATTR.mental, ...ATTR.physical].filter(k => !['long_throws', 'penalty_taking'].includes(k));
-  const top = pool.filter(k => p['attributes_' + k] >= 15).sort((x, y) => p['attributes_' + y] - p['attributes_' + x]);
-  const weak = KEY[grp].filter(k => p['attributes_' + k] != null).sort((x, y) => p['attributes_' + x] - p['attributes_' + y]).slice(0, 3);
-  const ar = ([n, v]) => `${n} <b style="color:${a20(Math.round(v))}">${v.toFixed(1)}</b>`;
-  return `${h3i('role', 'Player profile', 'hover a line for its rule')}
-    <div class="ra"><div class="ra-t">
-      <p class="ra-name" title="${esc(ARCH_RULE)}">${esc(t[0].toUpperCase() + t.slice(1))}</p>
-      <p class="ra-s" title="${esc(ARCH_RULE)}">Best areas ${ar(skill[0])} and ${ar(skill[1])}${body[0][1] >= 14 ? `, with ${ar(body[0])}` : ''}. Weakest area ${ar(low)}.</p>
-      <h4 title="Attributes at 15 or more (set pieces left out)">${top.length} attribute${top.length === 1 ? '' : 's'} at 15+</h4>
-      <div class="rs-cs">${top.length ? top.slice(0, 8).map(av).join('') + (top.length > 8 ? `<span class="rs-a" title="${esc(top.slice(8).map(k => label(k) + ' ' + p['attributes_' + k]).join(', '))}">+${top.length - 8} more</span>` : '') : '<span class="muted">None: no attribute reaches 15.</span>'}</div>
-      <h4 title="${esc(`Key attributes for a ${grp}: ${KEY[grp].map(label).join(', ')}. The three lowest are listed; 10 or less counts as a risk.`)}">Lowest key ${grp} attributes</h4>
-      <div class="rs-cs">${weak.map(av).join('')}</div>
-    </div><div class="ra-r" title="Radar = average of each area's attributes, scale 20, dashed ring = 15">${radar(ax)}<div class="ra-ax">${ax.map(([n, v]) => `<span>${n}<b style="color:${a20(Math.round(v))}">${v.toFixed(1)}</b></span>`).join('')}</div></div></div>`;
-}
 // Attributes against output: each phase's attribute average and its season stats as percentiles among the same peers.
 const VS_PH = {
   all: ['Overall level', 'ca', ['rating']], fin: ['Finishing', ['finishing', 'composure', 'off_the_ball'], ['goals', 'xg']], create: ['Chance creation', ['passing', 'vision', 'technique'], ['kp', 'xa', 'ccc']],
@@ -2518,30 +2516,6 @@ const VS_PH = {
 const VS_BY = { GK: ['all', 'shot', 'dist'], CB: ['all', 'def', 'aerial', 'prog', 'press'], FB: ['all', 'def', 'cross', 'drb', 'create', 'press'], DM: ['all', 'def', 'prog', 'press', 'create', 'aerial'],
   CM: ['all', 'prog', 'create', 'def', 'press', 'fin'], W: ['all', 'fin', 'create', 'drb', 'cross', 'press'], AM: ['all', 'create', 'fin', 'drb', 'prog', 'press'], ST: ['all', 'fin', 'aerial', 'create', 'drb', 'press'] };
 const VS_GAP = 20;
-function secVs() {
-  const { p, grp, bench } = ppx, pool = bench?.pool || [];
-  const head = h3i('vs', 'Attributes vs output', `percentiles among ${pool.length || '…'} ${plural(grp)} with ${PERF_MIN}+ min`);
-  if (!bench) return head + '<span class="sk" style="height:200px;width:100%"></span>';
-  if (pool.length < 20) return head + `<p class="rs-empty">Not enough peers with ${PERF_MIN}+ minutes in this save to compare.</p>`;
-  const played = (p.s_minutes || 0) >= PERF_MIN;
-  const aOf = (r, ks) => ks === 'ca' ? r.ability_current : mean(ks.map(k => r['attributes_' + k]));
-  const sOf = k => { const [, fn, , , lower] = M[k], v = fn(p), xs = pool.map(fn).filter(x => x != null); return v == null || xs.length < 20 ? null : pctOf(xs, v, lower); };
-  const rows = VS_BY[grp].map(id => { const [n, ks, ss] = VS_PH[id], v = aOf(p, ks), xs = pool.map(r => aOf(r, ks)).filter(x => x != null), sp = played ? ss.map(sOf).filter(x => x != null) : [];
-    return v == null || xs.length < 20 ? null : { n, ks, ss, at: pctOf(xs, v), out: sp.length ? Math.round(mean(sp)) : null }; }).filter(Boolean);
-  if (!rows.length) return head + '<p class="rs-empty">Not enough peer data to compare.</p>';
-  const word = d => d == null ? ['No output yet', C.muted] : d >= VS_GAP ? ['Above his attributes', C.good] : d <= -VS_GAP ? ['Below his attributes', C.orange] : ['In line', C.muted];
-  const both = rows.filter(r => r.out != null), cnt = [0, 0, 0]; both.forEach(r => cnt[r.out - r.at >= VS_GAP ? 0 : r.out - r.at <= -VS_GAP ? 2 : 1]++);
-  const sum = !played ? `Only <b>${(p.s_minutes || 0).toLocaleString()}</b> league minutes: output needs ${PERF_MIN}+, so only his attributes are placed.`
-    : `In line with his attributes in <b>${cnt[1]} of ${both.length}</b> areas` + (cnt[0] ? `, above them in <b style="color:${C.good}">${cnt[0]}</b>` : '') + (cnt[2] ? `, below them in <b style="color:${C.orange}">${cnt[2]}</b>` : '') + '.';
-  const tip = r => `${r.n}: attributes (${r.ks === 'ca' ? 'current ability' : r.ks.map(label).join(', ')}) beat ${r.at}% of peers` + (r.out != null ? `; output (${r.ss.map(k => M[k][0]).join(', ')}, per 90) beats ${r.out}%. ${VS_GAP}+ points apart = above or below his attributes. Output percentiles mix leagues: a strong league can pull his numbers down.` : `; no output percentile under ${PERF_MIN} league minutes.`);
-  return `${head}<p class="vs-sum">${sum}</p>
-    <div class="vs-lg" aria-hidden="true"><span><i class="vs-o"></i>attributes</span>${played ? '<span><i class="vs-d"></i>season output</span>' : ''}<span>line = median peer</span></div>
-    <div class="vs" role="list">${rows.map(r => { const d = r.out == null ? null : r.out - r.at, [w, c] = word(d), lo = Math.min(r.at, r.out ?? r.at), hi = Math.max(r.at, r.out ?? r.at);
-      return `<div class="vs-r" role="listitem" title="${esc(tip(r))}"><span class="vs-n">${r.n}</span>
-        <span class="vs-tr" aria-hidden="true"><i class="vs-b" style="left:${lo}%;width:${hi - lo}%;background:${c}"></i><i class="vs-o" style="left:${r.at}%;border-color:${pctColor(r.at)}"></i>${r.out != null ? `<i class="vs-d" style="left:${r.out}%;background:${pctColor(r.out)}"></i>` : ''}</span>
-        <span class="vs-v"><b style="color:${pctColor(r.at)}">${r.at}</b>${r.out != null ? `→<b style="color:${pctColor(r.out)}">${r.out}</b>` : ''}</span>${rsPill(w, c)}
-        <span class="sr">${esc(tip(r))}</span></div>`; }).join('')}</div>`;
-}
 // Tactical fit: every role score next to his familiarity with the positions that role is played from.
 const GRP_POS = { GK: ['GK'], CB: ['DC'], FB: ['DL', 'DR', 'WBL', 'WBR'], DM: ['DM'], CM: ['MC'], W: ['AML', 'AMR', 'ML', 'MR'], AM: ['AMC'], ST: ['ST'] };
 const bestPos = (p, g) => (Array.isArray(g) ? g : GRP_POS[g] || []).map(k => [k, p[posKey(k)] ?? 0]).sort((x, y) => y[1] - x[1])[0] || ['?', 0];
@@ -2556,113 +2530,70 @@ function roleSelect(roles, role, p) {
   const rest = roles.filter(([r]) => !canPlay(p, r));
   return `<label class="rl-pick"><span class="sr">Role</span><select id="ppRole">${roles.filter(([r]) => canPlay(p, r)).map(opt).join('')}${rest.length ? `<optgroup label="Other positions">${rest.map(opt).join('')}</optgroup>` : ''}</select></label>`;
 }
-const FIT_RULE = 'Fit 0-100 from the role\'s FM26 attributes: key ones count fully, preferred ones half. Position = his most familiar position for that role (familiarity 1-20: 18+ natural, 15+ accomplished, 12+ competent). "Not trained" = fit 75+ but familiarity under 12.';
-function secFit() {
-  const { p, grp } = ppx, gk = grp === 'GK';
-  const roles = Object.keys(META.roles).filter(r => (META.roles[r] === 'GK') === gk).map(r => [r, p['role_' + r]]).filter(x => x[1] != null).sort((x, y) => y[1] - x[1]);
-  if (!roles.length) return `${h3i('role', 'Tactical fit')}<p class="rs-empty">No role scores in this save.</p>`;
-  const gap = roles[1] ? roles[0][1] - roles[1][1] : null, n75 = roles.filter(x => x[1] >= 75).length;
-  const shape = gap == null ? null : gap >= 8 ? ['Specialist', `his best role leads the next by ${gap.toFixed(0)}`] : gap <= 3 ? ['Flexible', `his top two roles are ${gap.toFixed(0)} apart`] : ['Clear first role', `leads the next by ${gap.toFixed(0)}`];
-  const cover = POSITIONS.map(k => [k, p[posKey(k)]]).filter(x => x[1] >= 12 && x[1] < 15);
-  const row = ([r, x]) => { const [pk, pv] = bestPos(p, rolePos(r)), f = famil(pv), untrained = x >= 75 && pv < 12;
-    return `<div class="tf-r${untrained ? ' un' : ''}"><span class="tf-n">${label('role_' + r)}</span><i class="tf-b"><i style="width:${x}%;background:${scoreColor(x)}"></i></i><b style="color:${scoreColor(x)}">${x.toFixed(0)}</b>
-      <span class="tf-p" style="--c:${f ? f[2] : C.muted}" title="${esc(`${pk} familiarity ${famTxt(pv)}`)}">${t(pk)} ${famNum() ? pv : famTxt(pv)}</span></div>`; };
-  return `${h3i('role', 'Tactical fit', 'role fit, best position for it')}
-    <div class="rs-cs tf-sum" title="${esc(FIT_RULE + ' Specialist = best role 8+ ahead of the second; flexible = 3 or less.')}">
-      ${shape ? rsPill(shape[0], 'var(--mode)') + `<span class="rs-a">${shape[1]}</span>` : ''}${gk ? '' : `<span class="rs-a"><b style="color:${n75 >= 3 ? C.good : 'var(--text2)'}">${n75}</b> role${n75 === 1 ? '' : 's'} at 75+</span>`}
-      ${av('versatility')}</div>
-    <div class="tf"${gk ? ' style="flex:none"' : ''} title="${esc(FIT_RULE)}">${roles.slice(0, 7).map(row).join('')}</div>
-    ${gk ? '' : `<p class="rs-foot">Pill = his best position for the role${roles.slice(0, 7).some(([r, x]) => x >= 75 && bestPos(p, rolePos(r))[1] < 12) ? ', <span style="color:var(--warn)">dashed</span> = fits 75+ but not trained there' : ''}.</p>`}
-    ${cover.length ? `<p class="rs-foot" title="Positions at familiarity 12-14 (competent): not in the header, which lists natural and accomplished positions">Can cover at a pinch: ${cover.map(([k, v]) => `<b>${k}</b>${famNum() ? ' ' + v : ''}`).join(', ')}</p>` : ''}
-    ${gk ? gkStyle(p) : ''}`;
+// ---- Scouting report (B2-2): an archetype card and one list: For, Against, Usage. Each row is a label and one value.
+function archOf(p, grp) {
+  const gk = grp === 'GK', A = ARCH[gk ? 'gk' : 'out'], ax = (gk ? AXES_GK : AXES_OUT).map(([n, ks]) => [n, rsAvg(ks)]).filter(x => x[1] != null);
+  if (ax.length < 3) return null;
+  const skill = ax.filter(x => !A.body.includes(x[0])).sort((x, y) => y[1] - x[1]), body = ax.filter(x => A.body.includes(x[0])).sort((x, y) => y[1] - x[1]);
+  const adj = body[0]?.[1] >= 14 ? A.badj[body[0][0]](body[0][1]) : skill[1]?.[1] >= 13 ? A.adj[skill[1][0]] : '';
+  const noun = skill.length >= 3 && skill[0][1] - skill[2][1] <= 1 ? 'all-rounder' : A.noun[skill[0][0]];
+  const top = [...ax].sort((x, y) => y[1] - x[1])[0], low = [...ax].sort((x, y) => x[1] - y[1])[0];
+  return { ax, name: `${adj} ${noun}`.trim(), top, low };
 }
-// Keepers have one scored role, so the card adds his keeper areas as percentiles among keepers with PERF_MIN+ min.
-function gkStyle(p) {
-  const pool = ppx.bench?.pool || [];
-  if (pool.length < 20) return '';
-  const rows = AXES_GK.filter(([n]) => n !== 'Mentality').map(([n, ks]) => { const av_ = r => mean(ks.map(k => r['attributes_' + k])), v = av_(p), xs = pool.map(av_).filter(x => x != null);
-    return v == null ? null : [n, ks, v, pctOf(xs, v)]; }).filter(Boolean).sort((x, y) => y[3] - x[3]);
-  return `<h4 title="Each area = average of its attributes, placed among ${pool.length} keepers with ${PERF_MIN}+ min">Keeper areas vs ${pool.length} keepers</h4>
-    <div class="tf">${rows.map(([n, ks, v, pc]) => `<div class="tf-r" title="${esc(`${n}: ${ks.map(label).join(', ')} average ${v.toFixed(1)}, above ${pc}% of keepers`)}"><span class="tf-n">${n}</span><i class="tf-b"><i style="width:${pc}%;background:${pctColor(pc)}"></i></i><b style="color:${pctColor(pc)}">${pc}</b><span class="tf-p" style="--c:${a20(Math.round(v))}">${v.toFixed(1)}</span></div>`).join('')}</div>
-    <p class="rs-foot">Bar = percentile among keepers, pill = area average, scale 20.</p>`;
+const lv = (v, bad) => v == null ? null : (bad ? 21 - v : v);
+function secRid() {
+  const { p, grp } = ppx, a = archOf(p, grp);
+  if (!a) return `${h3i('role', 'Player profile')}<p class="rs-empty">No attributes to read in this mode.</p>`;
+  const nm = t(a.name).replace(/^./, c => c.toUpperCase());
+  return `${h3i('role', 'Player profile', 'areas = average of their attributes, out of 20')}<div class="rid">${radar(a.ax.map(([n, v]) => [`${t(n)} ${v.toFixed(1)}`, v]))}<p class="rid-n">${esc(nm)}</p>
+    <p class="rid-l"><span>Asset</span>${esc(t(a.top[0]))} <b>${a.top[1].toFixed(1)}</b></p><p class="rid-l"><span>Flaw</span>${esc(t(a.low[0]))} <b>${a.low[1].toFixed(1)}</b></p></div>`;
 }
-// Character rows: level from the average of the listed values (bad ones flipped): 15+ strong, 8 or less low.
-const CHAR = [
-  ['Work ethic', ['professionalism', 'determination'], ['Sets the standard in training.', 'Normal training habits.', 'Poor habits can hold him back.']],
-  ['Ambition', ['ambition'], ['Wants the top: may push for a move.', 'Content at a good level.', 'Little drive to move up.']],
-  ['Temperament', ['temperament', 'aggression'], ['Keeps his head under provocation.', 'Usually keeps calm.', 'Can lose his temper.'], [0]],
-  ['Discipline', ['dirtiness', 'sportsmanship'], ['Plays fair.', 'Ordinary discipline.', 'Picks up needless cards.']],
-  ['Leadership', ['leadership', 'teamwork'], ['Leads and plays for the team.', 'Fits in without leading.', 'Not a dressing-room voice.']],
-  ['Loyalty', ['loyalty'], ['Hard to prise away, stays once signed.', 'Neither loyal nor restless.', 'Will listen to other clubs.']],
-  ['Media', ['controversy'], ['Stays out of the headlines.', 'Occasional media noise.', 'Can stir trouble in the media.']],
-];
-const lvl3 = (v, hi, lo) => v >= hi ? 0 : v <= lo ? 2 : 1;
-function secMind() {
-  const { p } = ppx, out = [];
-  CHAR.forEach(([n, ks, txt, only]) => { const vs = (only || ks.map((_, i) => i)).map(i => ks[i]).map(k => RS_BAD.has(k) ? (rsV(k) == null ? null : 21 - rsV(k)) : rsV(k)).filter(x => x != null);
-    if (!vs.length) return; const s = mean(vs), l = lvl3(s, 15, 8);
-    let extra = '';
-    if (n === 'Discipline' && p.s_minutes >= 450) extra = ` <span class="rs-a" title="This season: ${p.s_yellow_cards ?? 0} yellow and ${p.s_red_cards ?? 0} red cards in ${p.s_minutes.toLocaleString()} min, ${(per90('s_fouls_made')(p) ?? 0).toFixed(2)} fouls per 90 (fewer is better)">cards <b>${p.s_yellow_cards ?? 0}</b>Y <b style="color:${p.s_red_cards ? C.bad : 'inherit'}">${p.s_red_cards ?? 0}</b>R</span>`;
-    out.push(rsRow(n, rsPill(['Strong', 'Average', 'Low'][l], [C.good, C.muted, C.bad][l]), `<span class="rs-t">${txt[l]}</span>${ks.map(av).join('')}${extra}`,
-      `${n} = average of ${(only || ks.map((_, i) => i)).map(i => ks[i]).map(k => RS_BAD.has(k) ? label(k) + ' (flipped, lower is better)' : label(k)).join(' and ')} = ${s.toFixed(1)}. 15+ strong, 8 or less low.${ks.length > (only || ks).length ? ` ${label(ks[1])} shown for context.` : ''}`)); });
-  return `${h3i('mind', 'Character', 'personality and mentality, hover for the rule')}<div class="rs">${out.join('')}</div>`;
+function secRroles() {
+  const { p, grp } = ppx, gk = grp === 'GK', roles = roleList(p).filter(([r]) => (META.roles[r] === 'GK') === gk).slice(0, 6);
+  if (!roles.length) return `${h3i('role', 'Best roles')}<p class="rs-empty">No role scores in this save.</p>`;
+  return `${h3i('role', 'Best roles', 'fit out of 100, his best position for it')}<div class="tf">${roles.map(([r, x]) => { const [pk, pv] = bestPos(p, rolePos(r)), f = famil(pv);
+    return `<div class="tf-r"><span class="tf-n">${label('role_' + r)}</span><i class="tf-b"><i style="width:${x}%;background:${scoreColor(x)}"></i></i><b style="color:${scoreColor(x)}">${x.toFixed(0)}</b>
+      <span class="tf-p" style="--c:${f ? f[2] : C.muted}">${t(pk)} ${f ? f[1] : 'Unfamiliar'}</span></div>`; }).join('')}</div>`;
 }
-// Risks: Low / Medium / High from fixed thresholds.
-const RLV = [['Low', C.good], ['Medium', C.warn], ['High', C.bad]];
-function secRisk() {
-  const { p, grp } = ppx, gk = grp === 'GK', rows = [], A = k => p['attributes_' + k], Q = k => p['personality_' + k];
-  const add = (n, l, txt, ks, tip, extra = '') => rows.push([l, rsRow(n, rsPill(RLV[l][0], RLV[l][1]), `<span class="rs-t">${txt}</span>${ks.map(av).join('')}${extra}`, tip)]);
-  if (A('injury_proneness') != null) { let l = A('injury_proneness') >= 14 ? 2 : A('injury_proneness') <= 7 ? 0 : 1; if (A('natural_fitness') != null && A('natural_fitness') <= 8 && l < 2) l++;
-    add('Injury', l, ['Rarely misses games through injury.', 'Normal injury risk.', 'Expect spells out injured.'][l], ['injury_proneness', 'natural_fitness'], 'Injury proneness 7 or less = low, 14+ = high; natural fitness 8 or less raises the level by one.'); }
-  if (A('consistency') != null) { const l = lvl3(A('consistency'), 15, 8); add('Form swings', l, ['Plays to his level week in, week out.', 'Some off days.', 'Often below his level.'][l], ['consistency'], 'Consistency 15+ = low, 8 or less = high.'); }
-  const bg = mean([A('important_matches'), Q('pressure')].filter(x => x != null));
-  if (bg != null) { const l = lvl3(bg, 15, 8); add('Big games', l, ['Rises to finals and derbies.', 'No special effect in big games.', 'Can freeze when it matters.'][l], ['important_matches', 'pressure'], `Average of important matches and pressure = ${bg.toFixed(1)}. 15+ = low, 8 or less = high.`); }
-  const [a1, a2] = gk ? [30, 33] : [27, 30], l4 = p.age <= a1 ? 0 : p.age <= a2 ? 1 : 2, pace = rsAvg(['pace', 'acceleration']);
-  const pb = l4 && !gk && pace >= 15;
-  add('Age curve', l4, (pb ? ['', 'Decline can start: his game is pace-based.', 'His pace-based game will fade.'] : ['Before the usual physical decline.', 'Physical decline can start.', 'Physical attributes will fall.'])[l4], pb ? ['pace', 'acceleration'] : [],
-    `${gk ? 'Goalkeepers' : 'Outfield players'}: ${a1} or younger = low, ${a1 + 1}-${a2} = medium, ${a2 + 1}+ = high. Pace and acceleration shown when they average 15+: a pace-based game fades first.`, `<span class="rs-a">age <b>${p.age}</b></span>`);
-  if (Q('adaptability') != null) { const l = lvl3(Q('adaptability'), 15, 8); add('Settling in', l, ['Settles fast, even abroad.', 'Needs time after a move abroad.', 'Slow to settle in a new country.'][l], ['adaptability'], 'Adaptability 15+ = low, 8 or less = high. Matters when he changes country.'); }
-  const weak = KEY[grp].filter(k => A(k) != null && A(k) <= 10).sort((x, y) => A(x) - A(y)), lw = weak.length >= 3 ? 2 : weak.length ? 1 : 0;
-  add(`Key ${grp} gaps`, lw, [`No key ${grp} attribute under 11.`, `${weak.length} key attribute${weak.length > 1 ? 's' : ''} at 10 or less.`, `${weak.length} key attributes at 10 or less.`][lw], weak, `Key attributes for a ${grp}: ${KEY[grp].map(label).join(', ')}. None at 10 or less = low, 1-2 = medium, 3+ = high.`);
-  const n = [0, 1, 2].map(l => rows.filter(r => r[0] === l).length);
-  return `${h3i('risk', 'Risk breakdown', `<span class="rk-sum" title="Hover a line for its thresholds">${[2, 1, 0].map(l => `<span style="--c:${RLV[l][1]}"><b>${n[l]}</b> ${RLV[l][0].toLowerCase()}</span>`).join('')}</span>`)}
-    <div class="rs">${rows.map(r => r[1]).join('')}</div>`;
-}
-// How to use him: one line per rule that fires, at most 8.
-function secUse() {
-  const { p, grp } = ppx, gk = grp === 'GK', A = k => p['attributes_' + k], hi = k => A(k) >= 15, out = [];
-  const add = (tag, txt, ks, tip) => out.push(`<li title="${esc(tip)}"><span class="ru-t">${tag}</span><span>${txt}${ks.length ? ' <span class="ru-k">' + ks.map(av).join('') + '</span>' : ''}</span></li>`);
-  const roles = roleList(p).filter(([r]) => (META.roles[r] === 'GK') === gk);
-  // Main role = best role he can already play (familiarity 15+ at one of its positions); Plan B = the next role within 5 points, flagged when it needs retraining.
-  const trained = ([r]) => bestPos(p, rolePos(r))[1] >= 15;
-  if (roles.length) { const main = roles.find(trained) || roles[0], [r, x] = main, [pk, pv] = bestPos(p, rolePos(r)), f = famil(pv);
-    add('Role', `<b>${label('role_' + r)}</b> (fit ${x.toFixed(0)}) ${pv >= 15 ? `from <b>${pk}</b> (${f[1].toLowerCase()})` : `but needs training at ${pk} (${famNum() ? pv + '/20' : famTxt(pv).toLowerCase()})`}.`, [], 'Best role among those he can already play (familiarity 15+, accomplished, at one of its positions); otherwise his best role.');
-    const alt = roles.find(o => o !== main && o[1] >= x - 5);
-    if (alt) { const [ak, apv] = bestPos(p, rolePos(alt[0]));
-      add('Plan B', `<b>${label('role_' + alt[0])}</b> (fit ${alt[1].toFixed(0)}), ${apv >= 15 ? (alt[1] > x ? 'a better fit' : 'almost as good') : `${alt[1] > x ? 'a better fit' : 'almost as good'} if trained at ${ak} (${famNum() ? apv + '/20' : famTxt(apv).toLowerCase()})`}.`, [], 'Next role within 5 points of the main one (or above it); positions under 15 familiarity need training.'); } }
-  const s = A('stamina'), nf = A('natural_fitness');
-  if (s != null && nf != null) add('Minutes', s >= 15 && nf >= 15 ? 'Can start every match.' : s <= 10 ? 'Sub him around the hour.' : nf <= 10 ? 'Needs rest between matches.' : 'Rotate him in busy weeks.', ['stamina', 'natural_fitness'],
-    'Both 15+ = every match; stamina 10 or less = substitute around the hour; natural fitness 10 or less = rest between matches; otherwise rotate.');
-  if (!gk) {
-    [['off_the_ball', 'pace', 'Balls in behind.'], ['dribbling', 'flair', 'Let him take on defenders.'], ['passing', 'vision', 'Route attacks through him.'],
-     ['tackling', 'anticipation', 'Use him to win the ball.'], ['work_rate', 'stamina', 'Suits a high press.'], ['heading', 'jumping_reach', 'Aim crosses at him.'], ['long_shots', 'long_shots', 'Shoot from distance.']]
-      .filter(([x, y]) => hi(x) && hi(y)).slice(0, 3).forEach(([x, y, t]) => add('Style', t, x === y ? [x] : [x, y], x === y ? `${label(x)} 15+ (at most 3 style lines).` : `${label(x)} and ${label(y)} both 15+ (at most 3 style lines).`));
-    hi('crossing') && !(hi('heading') && hi('jumping_reach')) && ['FB', 'W'].includes(grp) && add('Style', 'Room to cross.', ['crossing'], 'Crossing 15+ for a full-back or winger.');
-    A('work_rate') <= 10 && ['W', 'AM', 'ST'].includes(grp) && add('Cover', 'Put hard workers around him.', ['work_rate'], 'Work rate 10 or less for an attacker.');
-    A('pace') <= 10 && ['CB', 'FB'].includes(grp) && add('Cover', 'Avoid a high defensive line.', ['pace'], 'Pace 10 or less for a defender.');
-    A('decisions') <= 10 && add('Cover', 'Keep his tasks simple.', ['decisions'], 'Decisions 10 or less.');
-  } else {
-    hi('rushing_out') && A('one_on_ones') >= 14 && add('Style', 'Suits a high line: sweeps behind it.', ['rushing_out', 'one_on_ones'], 'Rushing out 15+ and one on ones 14+.');
-    A('rushing_out') <= 10 && add('Cover', 'Keep the defensive line deep.', ['rushing_out'], 'Rushing out 10 or less.');
-    (hi('kicking') || hi('passing')) && add('Style', 'Start attacks from him.', ['kicking', 'passing'], 'Kicking or passing 15+.');
-    hi('command_of_area') && add('Style', 'Lets the team defend crosses deep.', ['command_of_area'], 'Command of area 15+.');
+function secReport() {
+  const { p, grp, bench } = ppx, gk = grp === 'GK', A = k => p['attributes_' + k], Q = k => p['personality_' + k], cand = [];
+  const word = x => x >= 15 ? 'strong' : x >= 13 ? 'good' : x <= 8 ? 'weak' : 'average';
+  // One candidate per signal: level on 1-20 (bad ones flipped) and the value shown. For = 15+, Against = 8 or less.
+  const add = (l, x, show) => { if (x != null) cand.push({ l, x, show: show ?? Math.round(x) }); };
+  const m = ks => { const vs = ks.map(([k, bad]) => lv(rsV(k), bad)).filter(v => v != null); return vs.length ? mean(vs) : null; };
+  const we = m([['professionalism'], ['determination']]); add('Work ethic', we, we != null && word(we));
+  add('Pressure', Q('pressure')); add('Big games', A('important_matches')); const tp = m([['temperament']]); add('Temperament', tp, tp != null && word(tp));
+  const inj = lv(A('injury_proneness'), true); add('Injuries', inj, inj != null && (inj >= 13 ? 'low' : inj <= 8 ? 'high' : 'average'));
+  add('Consistency', A('consistency')); add('Adaptability', Q('adaptability')); add('Ambition', Q('ambition')); add('Loyalty', Q('loyalty'));
+  add('Teamwork', A('teamwork')); add('Leadership', A('leadership'));
+  if (p.age != null) add('Age', p.age <= 21 ? 16 : p.age >= (gk ? 33 : 31) ? 6 : null, p.age);
+  const arch = archOf(p, grp); if (arch && arch.low[1] <= 8) add(t(arch.low[0]), arch.low[1], arch.low[1].toFixed(1));
+  ['Determination', 'Composure', 'Decisions', 'Anticipation', 'Work Rate', 'Bravery'].forEach(n => add(n, A(n.toLowerCase().replace(' ', '_'))));
+  // Output against attributes, from the season stats (same peers and phases as the old card)
+  if (bench?.pool?.length >= 20 && (p.s_minutes || 0) >= PERF_MIN) {
+    const pool = bench.pool, aOf = (r, ks) => ks === 'ca' ? r.ability_current : mean(ks.map(k => r['attributes_' + k]));
+    const ds = VS_BY[grp].map(id => { const [, ks, ss] = VS_PH[id], v = aOf(p, ks), xs = pool.map(r => aOf(r, ks)).filter(x => x != null);
+      const sp = ss.map(k => { const [, fn, , , lower] = M[k], y = fn(p), ys = pool.map(fn).filter(x => x != null); return y == null || ys.length < 20 ? null : pctOf(ys, y, lower); }).filter(x => x != null);
+      return v == null || xs.length < 20 || !sp.length ? null : mean(sp) - pctOf(xs, v); }).filter(x => x != null);
+    const up = ds.filter(d => d >= VS_GAP).length, dn = ds.filter(d => d <= -VS_GAP).length;
+    if (up > dn) add('Output', 17, 'above'); else if (dn > up) add('Output', 6, 'below');
   }
-  const sp = [['penalty_taking', 'penalties'], ['free_kick_taking', 'direct free kicks'], ['corners', 'corners'], ['long_throws', 'long throws']].filter(([k]) => hi(k));
-  sp.length && add('Set pieces', `Give him ${sp.map(x => x[1]).join(', ')}.`, sp.map(x => x[0]), 'Penalty taking, free kicks, corners or long throws at 15+.');
-  hi('important_matches') && add('Big games', 'Start him in finals and derbies.', ['important_matches'], 'Important matches 15+.');
-  hi('leadership') && add('Squad', 'Captain candidate.', ['leadership'], 'Leadership 15+.');
-  p.age <= 21 && p.pa_gap >= 15 && add('Growth', `Give him regular minutes: <b>+${p.pa_gap}</b> to his potential.`, [], 'Age 21 or less with a PA gap of 15+.');
-  return `${h3i('use', 'How to use him', 'one line per rule that fires, hover for it')}<ul class="ru">${out.slice(0, 8).join('') || '<li><span>No usage rule fires for him.</span></li>'}</ul>`;
+  const pros = cand.filter(c => c.x >= 13).sort((a, b) => b.x - a.x).slice(0, 4), cons = cand.filter(c => c.x <= 10).sort((a, b) => a.x - b.x).slice(0, 4);
+  // Usage: Plan B and Minutes always, then Style, Penalties, Big games when they fire; at most 4.
+  const use = [], roles = roleList(p).filter(([r]) => (META.roles[r] === 'GK') === gk), trained = ([r]) => bestPos(p, rolePos(r))[1] >= 15;
+  const main = roles.find(trained) || roles[0], alt = main && roles.find(o => o !== main);
+  use.push(['Plan B', alt ? `${t(label('role_' + alt[0]))} ${alt[1].toFixed(0)}${trained(alt) ? '' : ' ' + t('at') + ' ' + t(bestPos(p, rolePos(alt[0]))[0])}` : 'n/a']);
+  const st = A('stamina'), nf = A('natural_fitness');
+  use.push(['Minutes', st == null || nf == null ? 'n/a' : st >= 15 && nf >= 15 ? 'Every match' : st <= 10 ? 'Off around the hour' : nf <= 10 ? 'Needs rest' : 'Rotate']);
+  const hi = k => A(k) >= 15, sty = gk ? [['rushing_out', 'one_on_ones', 'Sweeper'], ['kicking', 'passing', 'Distribution'], ['command_of_area', 'command_of_area', 'Commands his box']]
+    : [['off_the_ball', 'pace', 'Runs in behind'], ['dribbling', 'flair', 'Dribbling'], ['passing', 'vision', 'Playmaking'], ['tackling', 'anticipation', 'Ball winning'], ['work_rate', 'stamina', 'Pressing'], ['heading', 'jumping_reach', 'Aerial threat'], ['long_shots', 'long_shots', 'Long shots']];
+  const s2 = sty.filter(([x, y]) => hi(x) && hi(y)).slice(0, 2).map(x => t(x[2]));
+  if (s2.length) use.push(['Style', s2.join(', ')]);
+  if (hi('penalty_taking')) use.push(['Penalties', `${t('Yes')}, ${A('penalty_taking')}`]);
+  if (hi('important_matches') && !pros.some(c => c.l === 'Big games')) use.push(['Big games', 'Starter']);
+  const row = (c, cls) => `<div class="rl-r"><i class="${cls}"></i><span>${esc(t(c.l))}</span><b>${esc(t(String(c.show)))}</b></div>`;
+  return `${h3i('use', 'Scouting report', 'For 13+, against 10 or less, out of 20')}<div class="rlist">${pros.length ? `<h4>For</h4>${pros.map(c => row(c, 'pro')).join('')}` : ''}${cons.length ? `<h4>Against</h4>${cons.map(c => row(c, 'con')).join('')}` : ''}
+    <h4>Usage</h4>${use.slice(0, 4).map(([l, v]) => `<div class="rl-u"><span>${esc(t(l))}</span><b>${esc(t(v))}</b></div>`).join('')}</div>`;
 }
 
 // Moneyball twin of Role fit: each role read from season stats (server: STAT_ROLES), bar = percentile vs the role's position group,
@@ -2746,24 +2677,14 @@ function secRole() {
   const role = roles.some(x => x[0] === ppRole) ? ppRole : (roles.find(([r]) => canPlay(p, r)) || roles[0])[0], sc = p['role_' + role];
   const vals = (META.role_attributes?.[role] || []).map(k => [k, p['attributes_' + k]]).filter(x => x[1] != null);
   const meets = vals.filter(x => x[1] >= 15).length, gaps = vals.filter(x => x[1] <= 11).sort((a, b) => a[1] - b[1]);
-  const vs = (ppx.squad || []).filter(r => r['role_' + role] != null).sort((a, b) => b['role_' + role] - a['role_' + role])[0];
   return `${h3i('role', 'Role fit', 'FM26 key attributes, tick = 15')}
     ${roleSelect(roles, role, p)}
     <div class="rl-top">${ring(sc / 100, scoreColor(sc), sc.toFixed(0), `${label('role_' + role)} fit ${sc.toFixed(0)} of 100`)}
       <div><b>${label('role_' + role)}</b><span>meets <b style="color:${meets >= vals.length / 2 ? C.good : C.warn}">${meets} of ${vals.length}</b> key attributes at 15+</span>
         <span>${gaps.length ? 'Gaps: ' + gaps.slice(0, 3).map(([k, x]) => `${label(k)} ${x}`).join(', ') : 'No key attribute under 12'}</span>
         ${(() => { const xs = (ppx.bench?.pool || []).map(r => r['role_' + role]).filter(x => x != null); if (xs.length < 20) return ''; const pc = pctOf(xs, sc); return `<span>Fit above <b style="color:${pctColor(pc)}">${pc}%</b> of ${xs.length} ${plural(grp)} with ${PERF_MIN}+ min</span>`; })()}</div></div>
-    ${vs ? vsStrip(p.name, sc, vs.name, vs['role_' + role]) : ''}
-    <div class="fbs">${vals.map(([k, x]) => fbar(label(k), x, x / 20, x >= 15 ? C.good : x >= 12 ? C.ok : C.warn, '', .75).replace(/<i>/, vs?.['attributes_' + k] != null ? `<i><s class="rv" style="left:${pctW(vs['attributes_' + k] / 20)}" title="${esc(vs.name)} ${vs['attributes_' + k]}"></s>` : '<i>')).join('')}</div>
+    <div class="fbs">${vals.map(([k, x]) => fbar(label(k), x, x / 20, x >= 15 ? C.good : x >= 12 ? C.ok : C.warn, '', .75)).join('')}</div>
 `;
-}
-// "Better than your starter?": his fit and your best squad player's on one zoomed track.
-function vsStrip(me, sc, name, st) {
-  const lo = Math.max(0, Math.floor((Math.min(sc, st) - 6) / 5) * 5), hi = Math.min(100, Math.ceil((Math.max(sc, st) + 6) / 5) * 5), X = v => pctW((v - lo) / (hi - lo));
-  const d = Math.round(sc) - Math.round(st), last = name.split(' ').at(-1);
-  return `<div class="rl-vs" title="${esc(`◆ = ${name}'s value on each key attribute below`)}"><p><s></s>Your best <b>${esc(last)} ${Math.round(st)}</b> <b style="color:${d > 0 ? C.good : d < 0 ? C.bad : C.muted}" class="mono">${d > 0 ? '+' : ''}${d}</b></p>
-    <div class="rl-tr" role="img" aria-label="${esc(`${name} ${Math.round(st)}, ${me} ${Math.round(sc)}`)}"><i class="gap" style="left:${X(Math.min(sc, st))};width:calc(${X(Math.max(sc, st))} - ${X(Math.min(sc, st))})"></i>
-      <i class="mk st" style="left:${X(st)}" title="${esc(name)} ${Math.round(st)}"></i><i class="mk me" style="left:${X(sc)}" title="${esc(me)} ${Math.round(sc)}"></i></div></div>`;
 }
 function secPizza(x = ppx, compact = false) {  // compact: the quick view's own card (Full, Fair play), one line under PERF_MIN
   const { p, grp, bench } = x, mins = p.s_minutes || 0;
@@ -2815,26 +2736,6 @@ function secHero() {
 `;
 }
 // The deal equation: every price model as a dot against the asking line, fair band behind. Fair prices off: value and wage among peers.
-// Overview deal snapshot (Full, Fair play): what he costs against his fair value, a release clause that applies to your club, and his contract.
-function secDsnap() {
-  const { p } = ppx, ask = p.free_agent ? 0 : p.transfer_value, nat = ppx.squad?.[0]?.club_nation_id;
-  let cls = []; try { cls = JSON.parse(p.contract_clauses || '[]'); } catch {}
-  const applies = c => c.kind === 'minimum_fee_release' || nat != null && p.club_nation_id != null
-    && (c.kind === 'minimum_fee_release_foreign' ? p.club_nation_id !== nat : c.kind === 'minimum_fee_release_domestic' && p.club_nation_id === nat);
-  const cv = cls.filter(c => c.value > 0 && applies(c)).map(c => c.value), clause = cv.length ? Math.min(...cv) : null;
-  const pay = p.free_agent ? 0 : ask == null ? clause : clause != null ? Math.min(ask, clause) : ask, fair = FAIR ? p.fair_fee : null;
-  let verdict = '', bar = '';
-  if (fair) {
-    const ds = pay != null ? (fair - pay) / fair * 100 : null, col = ds == null ? C.muted : ds >= 0 ? dealColor(ds) : C.bad;
-    verdict = ds == null ? `<p class="ds-v"><b>Not for sale</b>, fair value <b class="mono">${money(fair)}</b></p>`
-      : `<p class="ds-v"><b style="color:${col}">${dealTag(ds)}</b> ${pay === clause && clause !== ask ? 'at the release clause' : p.free_agent ? 'on a free' : 'at the asking price'}, ${money(Math.abs(fair - pay))} ${ds >= 0 ? 'under' : 'over'} his fair value</p>`;
-    const [lo, hi] = p.fair_fee_range || [fair, fair], max = Math.max(hi, pay || 0, clause || 0) * 1.12 || 1, at = x => (x / max * 100).toFixed(1) + '%';
-    bar = `<div class="pbar" role="img" aria-label="${esc(`Fair range ${money(lo)} to ${money(hi)}, ${ask == null ? 'not for sale' : 'asking ' + money(ask)}${clause != null ? ', release clause ' + money(clause) : ''}`)}">
-      <div class="pbar-tr" aria-hidden="true"><i class="band" style="left:${at(lo)};width:calc(${at(hi - lo)} + 2px)"></i><i class="fair" style="left:${at(fair)}"></i>${ask != null ? `<i class="ask" style="left:${at(ask)};--c:${col}"></i>` : ''}${clause != null ? `<i class="clause" style="left:${at(clause)}"></i>` : ''}</div>
-      <div class="pbar-lg" aria-hidden="true"><span>Fair range <b>${money(lo)}–${money(hi)}</b></span>${clause != null ? `<span class="cl">Release clause <b>${money(clause)}</b></span>` : `<span>Asking <b>${ask == null ? 'Not for sale' : p.free_agent ? 'Free' : money(ask)}</b></span>`}</div></div>`;
-  } else verdict = `<p class="ds-v">${ask == null ? 'Not for sale' : p.free_agent ? 'Free agent' : `Asking <b class="mono">${money(ask)}</b>`}${clause != null ? `, release clause <b class="mono">${money(clause)}</b>` : ''}${FAIR ? ', no fair value for him' : ''}</p>`;
-  return `${h3i('cost', 'Deal snapshot')}<div class="ds">${verdict}${bar}<div title="Contract">${ppTimeline(p)}</div></div>`;
-}
 function secDeal() {
   const { p, grp, bench } = ppx, ask = p.free_agent ? 0 : p.transfer_value;
   if (!FAIR || p.fair_fee == null) {
@@ -2895,25 +2796,26 @@ const cntS = (l, k, lower, kind) => [l, p => p[k], per90(k), lower, kind];
 const rateS = (l, fn) => [l, fn, null, false, '%'];
 const ratio = (a, b) => p => p[b] ? (p[a] || 0) / p[b] * 100 : null;
 const gkSaves = p => p.s_saves_held == null && p.s_saves_parried == null && p.s_saves_tipped == null ? null : (p.s_saves_held || 0) + (p.s_saves_parried || 0) + (p.s_saves_tipped || 0);
+// mrg: one row for "made of attempted": season shows "8 of 10", the per-90 column the rate, ranked on the rate.
+const mrg = (l, made, att, rate) => [l, p => p[made], rate, false, 'm', p => p[made] == null && p[att] == null ? 'n/a' : `${p[made] ?? 0} of ${p[att] ?? 0}`];
 const ALL_STATS = {
-  fin: ['Finishing', [cntS('Goals', 's_goals'), cntS('xG', 's_expected_goals', false, 1), cntS('npxG', 's_non_penalty_expected_goals', false, 1), ['Goals − xG', p => p.s_goals != null && p.s_expected_goals != null ? p.s_goals - p.s_expected_goals : null,
-    p => p.s_minutes && p.s_goals != null && p.s_expected_goals != null ? (p.s_goals - p.s_expected_goals) * 90 / p.s_minutes : null, false, 1],
-    cntS('Shots', 's_shots'), cntS('Shots on target', 's_shots_on_target'), rateS('Shot accuracy', ratio('s_shots_on_target', 's_shots')),
-    cntS('Penalties taken', 's_penalties_taken'), cntS('Penalties scored', 's_penalties_scored')]],
+  fin: ['Finishing', [cntS('Goals', 's_goals'), cntS('xG', 's_expected_goals', false, 1),
+    mrg('Shots on target', 's_shots_on_target', 's_shots', ratio('s_shots_on_target', 's_shots')), cntS('Shots', 's_shots'),
+    mrg('Penalties scored', 's_penalties_scored', 's_penalties_taken', ratio('s_penalties_scored', 's_penalties_taken'))]],
   cre: ['Creating', [cntS('Assists', 's_assists'), cntS('xA', 's_expected_assists', false, 1), cntS('Key passes', 's_key_passes'), cntS('Clear-cut chances', 's_clear_cut_chances_created'),
-    cntS('Crosses completed', 's_crosses_completed'), cntS('Crosses attempted', 's_crosses_attempted'), rateS('Cross accuracy', ratio('s_crosses_completed', 's_crosses_attempted'))]],
-  car: ['Carrying & passing', [cntS('Dribbles', 's_dribbles'), cntS('Progressive passes', 's_progressive_passes'), cntS('Passes completed', 's_passes_completed'),
-    cntS('Passes attempted', 's_passes_attempted'), rateS('Pass completion', p => p.s_pass_pct), cntS('Possession lost', 's_possession_lost', true)]],
-  def: ['Defending', [cntS('Tackles won', 's_tackles_completed'), cntS('Tackles attempted', 's_tackles_attempted'), rateS('Tackle success', p => p.s_tackle_pct), cntS('Interceptions', 's_interceptions'),
+    mrg('Crosses', 's_crosses_completed', 's_crosses_attempted', ratio('s_crosses_completed', 's_crosses_attempted'))]],
+  car: ['Carrying & passing', [cntS('Dribbles', 's_dribbles'), cntS('Progressive passes', 's_progressive_passes'),
+    mrg('Passes', 's_passes_completed', 's_passes_attempted', p => p.s_pass_pct), cntS('Possession lost', 's_possession_lost', true)]],
+  def: ['Defending', [mrg('Tackles', 's_tackles_completed', 's_tackles_attempted', p => p.s_tackle_pct), cntS('Interceptions', 's_interceptions'),
     cntS('Possession won', 's_possession_won'), cntS('Pressures', 's_pressures_completed'), ['Defensive actions', () => null, p => p.s_def_actions_p90],
-    cntS('Headers won', 's_headers_won'), cntS('Aerial duels', 's_aerial_challenges_attempted'), rateS('Aerial success', p => p.s_header_pct), cntS('Clearances', 's_clearances'), cntS('Blocks', 's_blocks')]],
+    mrg('Headers won', 's_headers_won', 's_aerial_challenges_attempted', p => p.s_header_pct), cntS('Clearances', 's_clearances'), cntS('Blocks', 's_blocks')]],
   wrk: ['Workload & discipline', [['Starts / sub', p => p.s_starts, null, false, 'x', p => `${p.s_starts ?? 0} / ${p.s_substitute_appearances ?? 0}`], cntS('Distance (km)', 's_distance_km', false, 1), cntS('Player of the match', 's_player_of_the_match'),
     cntS('Yellow cards', 's_yellow_cards', true), cntS('Red cards', 's_red_cards', true), cntS('Errors leading to goal', 's_mistakes_leading_to_goal', true),
     cntS('Fouls made', 's_fouls_made', true), cntS('Fouls won', 's_fouls_against'), cntS('Offsides', 's_offsides', true)]],
   gks: ['Shot stopping', [['Saves', gkSaves, p => p.s_minutes && gkSaves(p) != null ? gkSaves(p) * 90 / p.s_minutes : null], cntS('Saves held', 's_saves_held'), cntS('Saves parried', 's_saves_parried'),
     cntS('Saves tipped', 's_saves_tipped'), cntS('Shots on target faced', 's_shots_on_target_faced'), cntS('xG prevented', 's_expected_goals_prevented', false, 1)]],
-  gka: ['Goals against', [cntS('Conceded', 's_goals_allowed', true), cntS('Clean sheets', 's_clean_sheets'), rateS('Clean sheet rate', ratio('s_clean_sheets', 's_apps'))]],
-  gkd: ['Distribution', [cntS('Passes completed', 's_passes_completed'), cntS('Passes attempted', 's_passes_attempted'), rateS('Pass completion', p => p.s_pass_pct), cntS('Progressive passes', 's_progressive_passes')]],
+  gka: ['Goals against', [cntS('Conceded', 's_goals_allowed', true), mrg('Clean sheets', 's_clean_sheets', 's_apps', ratio('s_clean_sheets', 's_apps'))]],
+  gkd: ['Distribution', [mrg('Passes', 's_passes_completed', 's_passes_attempted', p => p.s_pass_pct), cntS('Progressive passes', 's_progressive_passes')]],
 };
 // Every season stat by phase with his percentile vs his position (PERF_MIN+ peers), plus his top 5 / bottom 5:
 // shared by All stats and Moneyball's Profile read, so the two never disagree.
@@ -2928,24 +2830,27 @@ function statPhases(p, grp, pool) {
   const top = all.filter(r => r.pc >= 70 && !r.lower).sort((a, b) => b.pc - a.pc).slice(0, 5), low = all.filter(r => r.pc <= 30).sort((a, b) => a.pc - b.pc).slice(0, 5);
   return { phases, top, low };
 }
+// One phase at a time: a rail of phases (median percentile each) and that phase's table, rows by rank.
+let AST_PH = null;  // the phase in view, kept for the session
 function allStats() {
   const { p, grp, bench } = ppx, small = (p.s_minutes || 0) < PERF_MIN, pool = small ? [] : bench?.pool || [];
   if (!p.s_minutes) return '<p class="note">No league minutes this season: no stats to show yet.</p>';
-  const { phases, top, low } = statPhases(p, grp, pool);
+  const { phases, top, low } = statPhases(p, grp, pool), shown = phases.filter(([, rows]) => rows.some(r => r.T || r.N));
+  const cur = shown.find(([, , g]) => g === AST_PH) || shown[0]; if (!cur) return '<p class="note">No stats to show yet.</p>';
   const fmtT = (v, kind) => v == null ? 'n/a' : kind === '%' ? Math.round(v) + '%' : kind === 'r' ? v.toFixed(2) : kind === 1 ? (Math.abs(v) < 100 ? v.toFixed(1) : Math.round(v).toLocaleString()) : Math.round(v).toLocaleString();
-  const groups = phases.map(([t, rows]) => {
-    if (rows.every(r => !r.T && !r.N)) return '';  // phase empty for him (keepers' saves for an outfielder, etc.)
-    const ps = rows.map(r => r.pc).filter(x => x != null), md = ps.length ? median(ps) : null;
-    return `<section class="ast-p"><h5>${t}${md != null ? `<b style="--c:${pctColor(md)}" title="Median percentile of this phase">${Math.round(md)}</b>` : ''}</h5><div class="ast-r ast-hd" aria-hidden="true"><span>Stat</span><b>Season</b><em>Per 90</em><span title="Percentile vs his position">Rank</span></div>${rows.filter(r => r.T != null || r.N != null || r.show).map(r => {  // a stat the save does not store (FM27 pressures): no row
-      const cls = top.includes(r) ? ' hi' : low.includes(r) ? ' lo' : '';
-      const tip = `${r.l}: ${fmtT(r.T, r.kind)}${r.N != null ? `, ${r.N.toFixed(2)} per 90` : ''}${r.pc != null ? `, better than ${r.pc}% of ${plural(grp)}` : ''}${r.lower ? ' (fewer is better)' : ''}`;
-      return `<div class="ast-r${cls}" title="${esc(tip)}"${r.pc != null ? ` style="--c:${pctColor(r.pc)}"` : ''}><span>${r.l}</span><b>${r.T == null && r.N != null ? '' : r.show ? r.show(p) : fmtT(r.T, r.kind)}</b><em>${r.N == null ? '' : r.N.toFixed(r.kind === 1 && r.N >= 10 ? 1 : 2)}</em>${r.pc == null ? (small || r.kind === 'x' ? '<i></i>' : '<i class="pill">n/a</i>') : `<i class="pill">${r.pc}</i>`}</div>`; }).join('')}</section>`; }).join('');
+  const fmtN = r => r.N == null ? 'n/a' : r.kind === 'm' ? Math.round(r.N) + '%' : r.N.toFixed(r.kind === 1 && r.N >= 10 ? 1 : 2);
+  const med = rows => { const ps = rows.map(r => r.pc).filter(x => x != null); return ps.length ? Math.round(median(ps)) : null; };
+  const rail = shown.map(([t, rows, g]) => { const m = med(rows), on = g === cur[2];
+    return `<button role="tab" class="ast-tab" data-ast="${g}" aria-selected="${on}" tabindex="${on ? 0 : -1}"><span>${t}</span><b${m != null ? ` style="color:${pctColor(m)}"` : ''}>${m ?? 'n/a'}</b></button>`; }).join('');
+  const rows = [...cur[1]].filter(r => r.T != null || r.N != null || r.kind === 'm').sort((a, b) => (b.pc ?? -1) - (a.pc ?? -1));
   const chip = r => `<span class="pill" style="--c:${pctColor(r.pc)}" title="${esc(r.g)}">${esc(r.l)} <b>${r.pc}</b></span>`;
-  const hl = small ? minsGate(p.s_minutes, PERF_MIN)
-    : !bench ? '<span class="note">Loading peers…</span>'
-    : `${top.length ? `<span class="ast-t">Best</span>${top.slice(0, 3).map(chip).join('')}` : ''}${low.length ? `<span class="ast-t">Weakest</span>${low.slice(0, 3).map(chip).join('')}` : ''}${!top.length && !low.length ? '<span class="note">No standout number: everything sits mid-pack.</span>' : ''}`;
-  return `<div class="ast"><div class="ast-hl">${hl}<span class="ast-k" title="Total this season | per 90 | percentile vs ${plural(grp)} with ${PERF_MIN}+ min">total | /90 | pct${small ? '' : ` vs ${pool.length} ${plural(grp)}`}</span></div><div class="ast-g">${groups}</div></div>`;
+  const chips = small || !bench || (!top.length && !low.length) ? '' : `<div class="ast-hl">${top.length ? `<span class="ast-t">Best</span>${top.slice(0, 3).map(chip).join('')}` : ''}${low.length ? `<span class="ast-t">Weakest</span>${low.slice(0, 3).map(chip).join('')}` : ''}</div>`;
+  const body = rows.map(r => `<div class="ast-row"><span>${r.l}</span><b>${r.show ? r.show(p) : fmtT(r.T, r.kind)}</b><em>${r.kind === 'x' ? '' : fmtN(r)}</em>
+      <i class="ast-bar"${r.pc != null ? ` style="--c:${pctColor(r.pc)}"` : ''}><i style="width:${r.pc ?? 0}%"></i><u></u></i><span class="ast-rk"${r.pc != null ? ` style="--c:${pctColor(r.pc)}"` : ''}>${r.pc ?? 'n/a'}</span></div>`).join('');
+  return `<div class="ast2"><div class="ast-rail" role="tablist" aria-label="Phases of play">${rail}</div>
+    <div class="ast-main">${small ? minsGate(p.s_minutes, PERF_MIN) : chips}<div class="ast-row ast-hd" aria-hidden="true"><span>Stat, by rank</span><b>Season</b><em>Per 90</em><span class="ast-bh"><span>Rank among</span> ${pool.length ? `<span>${pool.length}</span> ` : ''}<span>${plural(grp)}</span></span></div>${body}</div></div>`;
 }
+function setAstPhase(g, focus) { AST_PH = g; ppPaint(['stats']); if (focus) $(`#player [data-ast="${g}"]`)?.focus(); }
 const PHASE_ATTR = { out: [['Finishing', ['finishing', 'composure', 'off_the_ball', 'long_shots']], ['Creating', ['passing', 'vision', 'technique', 'crossing']], ['Carrying', ['dribbling', 'pace', 'acceleration', 'agility']], ['Defending', ['tackling', 'marking', 'positioning', 'work_rate']]],
   gk: [['Shot stopping', ['reflexes', 'one_on_ones', 'handling']], ['Aerial', ['aerial_reach', 'command_of_area', 'punching']], ['Distribution', ['kicking', 'throwing', 'passing']], ['Sweeping', ['rushing_out', 'acceleration', 'anticipation']]] };
 // Pitch-canvas lane (proposal 3): positions as bubbles sized and coloured by familiarity, on a narrow vertical lane between the panels.
@@ -3117,7 +3022,8 @@ function sideBody(k) {
   }
   if (k === 'traits') {
     const rep = [['World', p.reputation_world], ['Current', p.reputation_current], ['Home', p.reputation_home], ['Club', p.club_reputation]].filter(x => x[1] != null);
-    return rep.length ? `<p class="note" style="margin:0 0 6px">Scale 10</p><div class="fbs">${rep.map(([n, v]) => fbar(n, (v / 1000).toFixed(1), v / 10000, 'var(--mode)')).join('')}</div>` : '<p class="note">No reputation recorded.</p>';
+    const why = { World: 'How well known he is around the world', Current: 'His standing right now, moved by recent form', Home: 'How well known he is in his own country', Club: "His club's standing" };
+    return rep.length ? `<p class="note" style="margin:0 0 6px">Scale 10, hover a line</p><div class="fbs">${rep.map(([n, v]) => `<div title="${esc(t(why[n]))}">${fbar(n, (v / 1000).toFixed(1), v / 10000, 'var(--mode)')}</div>`).join('')}</div>` : '<p class="note">No reputation recorded.</p>';
   }
   if (k === 'apx') return apxScatter();
   if (k === 'attrs') return heatMap(p, false);
@@ -3133,9 +3039,9 @@ function sideBody(k) {
 }
 // Profile pages per mode: [id, tab label, cards]. Overview and the stats page with the beeswarm place cards by named grid areas (CSS).
 const PP_PAGES = {
-  full: [['over', 'Overview', ['role', 'dsnap', 'attr', 'canvas', 'sg', 'dev']], ['report', 'Scouting report', ['rarch', 'rvs', 'rfit', 'rmind', 'rrisk', 'ruse']], ['stats', 'Statistics', ['swarm', 'stats']],
+  full: [['over', 'Overview', ['role', 'dsnap', 'attr', 'canvas', 'sg', 'dev']], ['report', 'Scouting report', ['rid', 'rlist', 'rroles']], ['stats', 'Statistics', ['swarm', 'stats']],
     ['similar', 'Similar players', ['similar', 'apx']], ['price', 'Price', ['pverdict', 'plens', 'pmarket', 'phist']], ['contract', 'Contract', ['contract', 'clauses', 'club', 'traits']]],
-  fair: [['over', 'Overview', ['role', 'dsnap', 'attr', 'canvas', 'sg', 'radar']], ['report', 'Scouting report', ['rarch', 'rvs', 'rfit', 'rmind', 'rrisk', 'ruse']], ['stats', 'Statistics', ['swarm', 'stats']], ['similar', 'Similar players', ['similar']], ['price', 'Price', ['pverdict', 'plens', 'pmarket', 'phist']], ['contract', 'Contract', ['contract', 'clauses', 'club', 'traits']]],
+  fair: [['over', 'Overview', ['role', 'dsnap', 'attr', 'canvas', 'sg', 'radar']], ['report', 'Scouting report', ['rid', 'rlist', 'rroles']], ['stats', 'Statistics', ['swarm', 'stats']], ['similar', 'Similar players', ['similar']], ['price', 'Price', ['pverdict', 'plens', 'pmarket', 'phist']], ['contract', 'Contract', ['contract', 'clauses', 'club', 'traits']]],
   moneyball: [['over', 'Overview', ['read', 'role', 'pizza', 'simmini']], ['stats', 'Statistics', ['swarm', 'stats']], ['similar', 'Similar players', ['similar']], ['price', 'Price', ['pverdict', 'plens', 'pmarket', 'phist']], ['contract', 'Contract', ['contract', 'clauses', 'club', 'traits']]],
 };
 // Moneyball under PERF_MIN: the Overview swaps to a gated grid (ui-ux-designer, owner-approved), g1 = some minutes, g0 = none.
@@ -3161,8 +3067,8 @@ function simMini(n, more = true) {
   const s = ppx.sim; if (!s) return '<span class="sk" style="height:120px;width:100%"></span>';
   return s.rows.length ? `<div class="sim-mini">${s.rows.slice(0, n).map(r => simRow(r)).join('')}</div>${more ? '<button class="link" data-ppgo="similar">All similar players →</button>' : ''}` : '<p class="note">No close match found.</p>';
 }
-const PP_FN = { dsnap: secDsnap, kpis: secKpis, hero: secHero, deal: secDeal, sg: secSG, dev: secDev, attr: secAttr, role: secRole, canvas: secCanvas, read: secRead, gread: secGateRead, ssf: secSsf, prev: secPrev, pos: secGatePos, val: secGateVal, swarm: secSwarm, pizza: secPizza,
-  radar: () => profileInner(ppx.p), rarch: secArch, rvs: secVs, rfit: secFit, rmind: secMind, rrisk: secRisk, ruse: secUse, simmini: () => h3i('similar', 'Similar players', '<button class="link" data-ppgo="similar">See all →</button>') + simMini(MODE === 'moneyball' ? 7 : 3, false) };
+const PP_FN = { dsnap: () => h3i('similar', 'Most similar players', '<button class="link" data-ppgo="similar">See all →</button>') + simMini(4, false), kpis: secKpis, hero: secHero, deal: secDeal, sg: secSG, dev: secDev, attr: secAttr, role: secRole, canvas: secCanvas, read: secRead, gread: secGateRead, ssf: secSsf, prev: secPrev, pos: secGatePos, val: secGateVal, swarm: secSwarm, pizza: secPizza,
+  radar: () => profileInner(ppx.p), rid: secRid, rlist: secReport, rroles: secRroles, simmini: () => h3i('similar', 'Similar players', '<button class="link" data-ppgo="similar">See all →</button>') + simMini(MODE === 'moneyball' ? 7 : 3, false) };
 // Development over the snapshots ScoutSheet keeps each time this career's save is loaded (server: snapshot()).
 // series: [key, label, dashed]; one small line chart, one shared scale (CA and PA, or one measure alone).
 const dDate = d => new Date(d + 'T00:00').toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' });
@@ -3310,6 +3216,11 @@ $('#player').addEventListener('click', e => {
 });
 $('#player').addEventListener('change', e => { if (e.target.id === 'ppRole') { ppRole = e.target.value; ppPaint(['role']); $('#ppRole')?.focus(); } });
 $('#player').addEventListener('keydown', e => {
+  const tab = e.target.closest?.('.ast-tab');  // All stats rail: arrows move between phases (tablist)
+  if (tab && ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft'].includes(e.key)) {
+    const tabs = $$('.ast-tab', tab.parentElement), k = tabs.indexOf(tab) + (['ArrowDown', 'ArrowRight'].includes(e.key) ? 1 : -1);
+    e.preventDefault(); return setAstPhase(tabs[(k + tabs.length) % tabs.length].dataset.ast, true);
+  }
   if (!e.target.matches('[data-pptab]') || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
   const ids = ppPages().map(x => x[0]), i = ids.indexOf(ppTab);
   e.preventDefault(); setPpTab(ids[(i + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length]); $(`[data-pptab="${ppTab}"]`)?.focus();
@@ -4573,7 +4484,7 @@ function shownProgress(p) {
 // The app's only call outside this computer: ask GitHub, once per launch, whether a newer release exists.
 async function checkUpdate() {
   try {
-    const { version, can_update } = await (await api('/api/status')).json();
+    const { version, can_update, update_failed } = await (await api('/api/status')).json();
     if (!version || version === 'dev') return 'Version check is off in builds run from source.';
     const r = await fetch('https://api.github.com/repos/absalom12/scoutsheetfm/releases/latest');
     if (!r.ok) return 'GitHub did not answer, try again later.';
@@ -4587,7 +4498,8 @@ async function checkUpdate() {
     el.className = 'update'; el.href = 'https://scoutsheet.fm/'; el.target = '_blank'; el.rel = 'noopener';
     el.textContent = `ScoutSheet ${latest} is out (you have ${version}). Download it ↗`;
     document.body.append(el);
-    if (can_update) {  // built app: install in place, the download link stays as the fallback
+    if (update_failed) el.textContent = `ScoutSheet ${latest} could not be installed (${update_failed}). Download it ↗`;  // Windows swap failed last time
+    else if (can_update) {  // built app: install in place, the download link stays as the fallback
       el.textContent = `ScoutSheet ${latest} is out (you have ${version}). Install and restart`;
       el.onclick = e => { e.preventDefault(); el.onclick = null; installUpdate(el); };
     }
@@ -4860,6 +4772,7 @@ document.addEventListener('click', e => {
   else if (d.start) startAt(+d.start, slotSel);
   else if (d.tactic != null) applyTactic(+d.tactic);
   else if (d.roleReset != null) resetSlotRoles(+d.roleReset);
+  else if (d.ast) setAstPhase(d.ast);
   else if (d.phase) { PHASE = d.phase; renderClub(); }
   else if (d.pviewClose != null) { pView = null; renderClub(); }
   else if (d.filters != null) { filtOpen = !filtOpen; renderSlotCard(); loadRecos(); }
