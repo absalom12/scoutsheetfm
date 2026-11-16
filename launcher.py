@@ -90,11 +90,49 @@ def native_window(url, ready) -> bool:
         return False
 
 
+def offer_move():
+    """macOS, once: offer to move the app into Applications. Opened from Downloads or the zip, it runs from a read-only
+    copy (App Translocation) that the in-app update cannot replace. True when the moved copy was started instead."""
+    import shutil, subprocess, updater
+    from pathlib import Path
+    app = updater.bundle() if sys.platform == "darwin" else None
+    asked = data_dir() / "move-asked"
+    if not app or app.parent in (Path("/Applications"), Path.home() / "Applications") or asked.exists():
+        return False
+    asked.touch()
+    r = subprocess.run(["osascript", "-e", 'button returned of (display dialog "Move ScoutSheet to the Applications '
+                        'folder?" & return & return & "Updates install automatically from there." buttons '
+                        '{"Not now", "Move to Applications"} default button 2 with title "ScoutSheet" with icon note)'],
+                       capture_output=True, text=True)
+    if r.stdout.strip() != "Move to Applications":
+        return False
+    dest = Path("/Applications") / app.name
+    tmp, old = dest.with_name(".ScoutSheet-new.app"), dest.with_name(".ScoutSheet-old.app")
+    try:
+        for d in (tmp, old):
+            shutil.rmtree(d, ignore_errors=True)
+        subprocess.run(["ditto", str(app), str(tmp)], check=True)
+        if dest.exists():  # an older copy: set aside, so a failure never leaves a half-deleted app
+            dest.rename(old)
+        tmp.rename(dest)
+    except Exception:
+        traceback.print_exc()
+        return False
+    shutil.rmtree(old, ignore_errors=True)
+    # ponytail: a translocated original (still in Downloads) is left there; finding it needs the private SecTranslocate API.
+    if "/AppTranslocation/" not in str(app):
+        shutil.rmtree(app, ignore_errors=True)
+    subprocess.Popen(["open", "-n", str(dest)])
+    return True
+
+
 def main():
     log_to_file()
     if is_scout(PORT):  # already running: just show it
         if not native_window(f"http://127.0.0.1:{PORT}", lambda: True):
             webbrowser.open(f"http://127.0.0.1:{PORT}")
+        return
+    if offer_move():
         return
     port = pick_port()
     url = f"http://127.0.0.1:{port}"
