@@ -497,6 +497,13 @@ def test_read_tactics_first_team_active_first_with_xi(scout):
     assert t[0]["out_of_possession"][5:7] == ["AMC", "DM"] and t[0]["mentality"] == "balanced"
     assert t[0]["xi"] == list(range(100, 111)) and "xi" not in t[1]
     assert scout.read_tactics(N(tactics=lambda: [], selections=lambda: []), 1) == []
+    # FM27 stores out-of-possession blocks in another order: slot j's block is slots[slots[j].position_index]
+    order = [0, 4, 2, 3, 1] + list(range(5, 11))  # DR (slot 1) and DL (slot 4) blocks swapped
+    sl = [N(in_possession_positions=pos(b)[0], out_of_possession_positions=pos(shape[order[j]])[0],
+            unknown={"out_of_possession_position_index": order[j]}) for j, b in enumerate(shape)]
+    s2 = N(tactics=lambda: [N(club_uid=1, team_slot=0, index=0, name="P", style_name="S", mentality=None, slots=sl)],
+           selections=lambda: [])
+    assert scout.read_tactics(s2, 1)[0]["out_of_possession"] == t[0]["in_possession"]
 
 
 def test_stats_csv_reads_an_empty_stat_column_as_numeric(scout, tmp_path):
@@ -551,3 +558,32 @@ def test_bad_player_query_is_4xx(client, body):
 
 def test_unknown_track_event_is_400(client):
     assert client.post("/api/track", json={"e": "steal_data"}).status_code == 400
+
+
+def test_fm27_role_signatures_decode(scout):
+    from types import SimpleNamespace as U
+    unit = lambda *bits: [U(second_bits_high=sum(1 << (b - 64) for b in bits))]
+    assert scout.role_name("in", "ST", 0, unit(82, 87)) == "Target Forward"
+    assert scout.role_name("in", "MC", 1 << 25, unit(86)) == "Midfield Playmaker"
+    assert scout.role_name("in", "MC", 1 << 16, unit(86)) == "Wide Central Midfielder"  # same last unit, other trail bit
+    assert scout.role_name("out", "AMR", 1 << 7, unit(85)) == "Tracking Winger"
+    assert scout.role_name("in", "ST", 0, unit(64)) is None  # unknown signature
+    assert all(n in scout.ROLE_BY_NAME or n in ("Wide Centre-Back", "Overlapping Centre-Back")
+               for g in scout.ROLE_SIG["in"].values() for n in g.values())  # every in-possession role can be scored
+
+
+def test_club_roles_param(squad, client, monkeypatch):
+    f = "GK DR DC DC DL DM DM AMR AMC AML ST".split()
+    best = client.get("/api/club").json()
+    assert best["roles"] == [None] * 11  # no saved tactic: best role everywhere, as before
+    assert client.get("/api/club", params={"roles": "," * 10}).json()["team_fit"] == best["team_fit"]
+    assert client.get("/api/club", params={"roles": "poacher" + "," * 10}).status_code == 400  # GK can't play it
+    assert client.get("/api/club", params={"roles": "nope" + "," * 10}).status_code == 400
+    assert client.get("/api/club", params={"roles": ","}).status_code == 400
+    r = client.get("/api/club", params={"roles": "," * 10 + "target_forward"}).json()
+    assert r["roles"][10] == "target_forward" and r["slots"][10]["role"] == "target_forward"
+    tac = {"in_possession": f, "out_of_possession": f, "roles": ["Goalkeeper"] + [None] * 9 + ["Poacher"]}
+    monkeypatch.setitem(squad.CLUB, "tactics", [tac])
+    assert client.get("/api/club").json()["roles"] == ["goalkeeper"] + [None] * 9 + ["poacher"]  # the save's roles by default
+    other = "GK DR DC DC DL DM MC MC AMR AML ST"
+    assert client.get("/api/club", params={"formation": other.replace(" ", ",")}).json()["roles"] == [None] * 11  # new shape: best roles

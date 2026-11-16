@@ -828,6 +828,20 @@ dialog::backdrop { background: rgba(3,6,9,.6); backdrop-filter: blur(2px); }
 .tac:hover { border-color: var(--line2); background: var(--raise); }
 .tac[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
 .tac-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.tac .tac-ch { color: var(--warn); }
+/* My Club roles: chips in the slot card, the targets band, the role under each pitch name and weakest slot */
+.rolebox { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg2); }
+.rb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rb-head .oopr { font-size: 12px; color: var(--muted); } .rb-head .oopr b { color: var(--text); }
+.rchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rchip { padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--r-pill); font-size: 12.5px; color: var(--text2); background: var(--bg); }
+.rchip[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 16%, var(--bg)); }
+.rchip.tac-r { border-style: dashed; } .rchip.tac-r small { margin-left: 5px; font: 700 9.5px var(--f-mono); letter-spacing: .06em; color: var(--warn); text-transform: uppercase; }
+.rchip:disabled { opacity: .5; cursor: default; }
+.rband { margin: 0 0 6px; padding: 7px 12px; border-left: 3px solid var(--accent); border-radius: 4px; background: var(--raise); font-size: 13px; color: var(--text2); } .rband b { color: var(--text); }
+.slot .bk.rl { color: rgba(255,255,255,.85); font-weight: 600; } .slot .bk.rl.best, .wk .wr.best { opacity: .6; font-weight: 400; }
+.rdot { display: inline-block; width: 5px; height: 5px; margin-left: 4px; border-radius: 50%; background: var(--warn); vertical-align: middle; }
+.wk .wr { font-size: 12px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .col-title .phase { margin-left: auto; text-transform: none; letter-spacing: 0; }
 .col-title .phase button { font-size: 12px; }
 .sub-l { font-weight: 500; letter-spacing: 0; text-transform: none; margin-left: auto; font-size: 12px; }
@@ -873,7 +887,10 @@ dialog::backdrop { background: rgba(3,6,9,.6); backdrop-filter: blur(2px); }
 .d-lists .now { font-size: 12px; color: var(--muted); border-left: 2px solid var(--text2); padding-left: 8px; margin-bottom: 8px; }
 .alts, #recos { overflow-y: auto; min-height: 0; flex: 1; }
 .alt, .tgt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 6px 10px; align-items: center; padding: 9px 4px; border-bottom: 1px solid var(--line); }
-.tgt { grid-template-columns: minmax(0, 1fr) auto auto; cursor: pointer; } .tgt:hover { background: var(--bg2); }
+.tgt { grid-template-columns: 18px minmax(0, 1fr) auto auto auto; cursor: pointer; } .tgt:hover, .tgt:focus-within { background: var(--bg2); }
+.tgt .rk { font: 600 12px var(--f-mono); color: var(--muted); text-align: right; }
+.tgt .pw { display: grid; text-align: right; font: 600 12px var(--f-mono); color: var(--text2); } .tgt .pw span { color: var(--muted); font-weight: 400; }
+#recos .tgt .ios { display: none; } #recos .tgt:hover .ios, #recos .tgt:focus-within .ios { display: grid; }  /* IN / OUT bars on hover or focus only: more rows fit */
 .alt .grip { color: var(--faint); cursor: grab; } .alt[draggable=true] { cursor: grab; }
 .alt .who, .tgt .who { display: grid; min-width: 0; } .alt .who b, .tgt .who b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .alt .who span, .tgt .who span { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1826,11 +1843,11 @@ const HG = { club: 'Home-grown at my club', nation: 'Home-grown in my nation' };
 let saved = []; try { saved = JSON.parse(localStorage.getItem('fm26_searches') || '[]'); } catch {}
 const saveSearches = () => { try { localStorage.setItem('fm26_searches', JSON.stringify(saved)); } catch {} };
 
-function toggleStar(uid, name, clubUid) {
+function toggleStar(uid, name, clubUid, from) {
   const on = !shortlist.has(uid);
   on ? shortlist.add(uid) : shortlist.delete(uid);
   saveSL();
-  if (on) track('shortlist');
+  if (on) track('shortlist', from);
   if (on && CLUB && clubUid === CLUB.club_uid) toast(`${name} is already one of ours. Up the Gas!`, 'good');
   else toast(on ? `★ ${name} added to shortlist` : `${name} removed from shortlist`);
   grid?.refreshCells({ columns: ['star'], force: true });
@@ -3611,6 +3628,31 @@ const cfCrit = () => [...(CF.age_min != null ? [[`Age ${CF.age_min}+`, () => { C
 // OOPF: out-of-possession shape (null = same as formation). TACI: tactic card in use. EDITED: the manager changed the
 // shape or the XI since that card was applied (a dot on the card; clicking a card restores it).
 let OOPF = null, PHASE = 'both', TACI = 0, EDITED = false, pView = null, filtOpen = false;
+// ROLESEL: each slot's in-possession role key, '' = his best role there; null until My Club loads (server default:
+// the save's tactic roles). Pitch pills use ROLE_AB, the full name stays in the title and the slot card.
+let ROLESEL = null;
+const ROLE_AB = { goalkeeper: 'Goalkeeper', ball_playing_goalkeeper: 'Ball-Play. GK', no_nonsense_goalkeeper: 'No-Nons. GK', centre_back: 'Centre-Back',
+  ball_playing_centre_back: 'Ball-Play. CB', no_nonsense_centre_back: 'No-Nons. CB', advanced_centre_back: 'Adv. CB', full_back: 'Full-Back',
+  inside_full_back: 'Inside FB', wing_back: 'Wing-Back', inside_wing_back: 'Inside WB', playmaking_wing_back: 'Playm. WB', advanced_wing_back: 'Adv. WB',
+  defensive_midfielder: 'Def. Mid', deep_lying_playmaker: 'Deep Playm.', half_back: 'Half Back', box_to_box_midfielder: 'Box-to-Box',
+  box_to_box_playmaker: 'B2B Playm.', central_midfielder: 'Central Mid', midfield_playmaker: 'Mid Playm.', wide_central_midfielder: 'Wide CM',
+  advanced_playmaker: 'Adv. Playm.', attacking_midfielder: 'Att. Mid', channel_midfielder: 'Channel Mid', free_role: 'Free Role',
+  second_striker: '2nd Striker', winger: 'Winger', inside_winger: 'Inside Winger', playmaking_winger: 'Playm. Winger', wide_midfielder: 'Wide Mid',
+  inside_forward: 'Inside Fwd', wide_forward: 'Wide Fwd', centre_forward: 'Centre Fwd', channel_forward: 'Channel Fwd', deep_lying_forward: 'Deep Fwd',
+  false_nine: 'False 9', poacher: 'Poacher', target_forward: 'Target Fwd' };
+const roleName = k => (k && CLUB?.role_names?.[k]) || '';
+// The tactic in use, when the pitch still has its shape: its role keys ('' = none read) and out-of-possession role names.
+const tacOn = () => { const t = CLUB?.tactics?.[TACI]; return t && t.in_possession.join() === formation.join() ? t : null; };
+const tacKeys = () => tacOn()?.role_keys?.map(k => k || '') || Array(11).fill('');
+const roleEdited = i => !!tacOn()?.role_keys && (ROLESEL?.[i] || '') !== tacKeys()[i];
+const rolesChanged = () => ROLESEL ? ROLESEL.filter((_, i) => roleEdited(i)).length : 0;
+const rolesAt = pos => { const col = pos === 'ST' ? 'stc' : pos.toLowerCase(); return Object.keys(META.role_pos || {}).filter(r => META.role_pos[r].includes(col)); };
+const rolesOn = () => MODE !== 'moneyball' && basis() !== 'performance';
+function setRole(i, k) {
+  if (!ROLESEL) ROLESEL = Array(11).fill('');
+  if ((ROLESEL[i] || '') === k) return;
+  ROLESEL = ROLESEL.map((x, j) => j === i ? k : x || ''); saveClubState(); track('club_role'); refetchClub();
+}
 const GROUP_NAME = { GK: 'Goalkeeper', CB: 'Centre-back', FB: 'Full-back', DM: 'Holding mid', CM: 'Central mid', AM: 'Attacking mid', W: 'Wide', ST: 'Striker' };
 const grpName = pos => GROUP_NAME[SLOT_GRP[pos]] || pos;
 const ringC = v => v == null ? C.muted : v >= 80 ? C.good : v >= 70 ? C.ok : v >= 60 ? C.warn : v >= 50 ? C.orange : C.bad;
@@ -3620,17 +3662,19 @@ const famDots = v => v == null ? '' : `<span class="fdots" title="${FAM_WORD[fam
 const outF = () => OOPF && OOPF.length === 11 ? OOPF : formation;
 const saveStamp = () => `${CLUB?.club_uid}|${META?.game_date}`;
 const clubState = () => ls('fm26_club_state', {});
-const saveClubState = () => lsSet('fm26_club_state', { stamp: saveStamp(), taci: TACI, oop: OOPF, edited: EDITED });
+const saveClubState = () => lsSet('fm26_club_state', { stamp: saveStamp(), taci: TACI, oop: OOPF, edited: EDITED, roles: ROLESEL });
 const savedFormation = () => { const sv = ls('fm26_formation', null); return Array.isArray(sv) && sv.length === 11 ? sv : null; };
 function clubQS(f = formation || savedFormation(), o = OOPF) {
   const pins = Object.entries(PINS).map(([i, u]) => `${i}:${u}`).join(',');
-  return [f ? 'formation=' + f.join(',') : '', o ? 'oop=' + o.join(',') : '', 'mode=' + MODE, 'basis=' + basis(), pins ? 'pins=' + pins : ''].filter(Boolean).join('&');
+  return [f ? 'formation=' + f.join(',') : '', o ? 'oop=' + o.join(',') : '', 'mode=' + MODE, 'basis=' + basis(), pins ? 'pins=' + pins : '',
+    ROLESEL ? 'roles=' + ROLESEL.join(',') : ''].filter(Boolean).join('&');
 }
 function setPins(p) { PINS = p; EDITED = true; lsSet('fm26_pins', PINS); saveClubState(); refetchClub(); }
 // A card puts back that tactic's two shapes and, for the one in use in the save, its starting XI.
-function applyTactic(i) {
+function applyTactic(i, roles) {
   const t = CLUB.tactics?.[i]; if (!t) return;
   TACI = i; formation = [...t.in_possession]; OOPF = [...t.out_of_possession]; EDITED = false; slotSel = null; pView = null;
+  ROLESEL = roles || (t.role_keys || Array(11).fill('')).map(k => k || '');
   PINS = t.xi ? Object.fromEntries(t.xi.map((u, k) => [k, u]).filter(x => x[1] != null)) : {};
   lsSet('fm26_pins', PINS); saveClubState(); refetchClub();
 }
@@ -3730,7 +3774,7 @@ function capEdit(el, seed) {
 }
 function clubBody() {
   const a = capVal('age_max');
-  return { budget: capVal('budget'), wage_max: capVal('wage_max'), age_max: a ?? 99, gender: gender(), formation, oop: OOPF, mode: MODE, slot_index: slotSel,
+  return { budget: capVal('budget'), wage_max: capVal('wage_max'), age_max: a ?? 99, gender: gender(), formation, oop: OOPF, roles: ROLESEL, mode: MODE, slot_index: slotSel,
     basis: basis(), pins: PINS, search: cfCrit().length ? clubSearchQuery({ ...CF, value_max: null, wage_max: null, age_max: null }) : null };
 }
 const clubSearchQuery = f => query({ search: '', preset: null, shortlist: null, positions: [], similar_to: null, filters: {} }, f);
@@ -3744,8 +3788,11 @@ async function loadClub(force) {
   if (!r || !r.ok) { box.innerHTML = `<div class="panel-msg">${emptyState('My Club is not available', 'The server did not answer. It may be restarting.', '<button class="btn" id="clubRetry">Try again</button>')}</div>`; return; }
   CLUB = await r.json(); formation = [...CLUB.formation]; PINS = CLUB.pins || {};
   // My Club opens on the save's tactic in use and its XI; edits last while the app is open (CLUB stays loaded).
-  if (CLUB.tactics?.length) return applyTactic(0);
-  OOPF = null; TACI = 0; EDITED = false; saveClubState();
+  // Roles the manager picked survive a reload while the save is the same one.
+  const keptRoles = st.stamp === saveStamp() && Array.isArray(st.roles) && st.roles.length === 11 ? st.roles : null;
+  if (CLUB.tactics?.length) return applyTactic(0, keptRoles);
+  OOPF = null; TACI = 0; EDITED = false; ROLESEL = keptRoles || CLUB.roles.map(k => k || ''); saveClubState();
+  if (keptRoles) return refetchClub();
   if (oop) return refetchClub();
   renderClub(); loadRecos();
   grid?.refreshCells({ columns: ['name'], force: true });
@@ -3803,7 +3850,7 @@ function renderClub() {
       <div><h1>${esc(CLUB.club_name)}</h1><div class="sub">${line} <span class="tfit">Tactical ${fitWord()} <b class="mono" style="color:${ringC(CLUB.team_fit)}">${n0(CLUB.team_fit)}</b></span></div></div>
       <div class="ctrls">
         <label class="fld">Shape <select id="cShape" class="in">${Object.keys(shapes()).map(k => `<option ${k === shapeName() ? 'selected' : ''}>${k}</option>`).join('')}${shapeName() ? '' : '<option selected disabled>Custom</option>'}</select></label>
-        ${tacs.map((x, i) => `<button class="tac${tacs.length === 1 ? ' wide' : ''}" data-tactic="${i}" aria-pressed="${i === TACI}" title="Back to this tactic's shapes and XI"><b>${esc(tacName(x))}</b><span>${esc([x.style, mentality(x.mentality)].filter(Boolean).join(', '))}</span>${i === TACI && EDITED ? '<i class="tac-dot" aria-label="changed"></i>' : ''}</button>`).join('')}
+        ${tacs.map((x, i) => `<button class="tac${tacs.length === 1 ? ' wide' : ''}" data-tactic="${i}" aria-pressed="${i === TACI}" title="Back to this tactic's shapes and XI"><b>${esc(tacName(x))}</b><span>${esc([x.style, mentality(x.mentality)].filter(Boolean).join(', '))}</span>${i === TACI && rolesChanged() ? `<span class="tac-ch">${rolesChanged() === 1 ? '1 role changed, click to reset' : `${rolesChanged()} roles changed, click to reset`}</span>` : ''}${i === TACI && (EDITED || rolesChanged()) ? '<i class="tac-dot" aria-label="changed"></i>' : ''}</button>`).join('')}
       </div>
     </div>
     <div class="club-grid">
@@ -3819,7 +3866,9 @@ function renderClub() {
           ${formation.map((pos, i) => { const s = slotOf(i), st = s.pos === pos ? s.starter : null, ph = PHASE === 'out' ? out[i] : pos;
             return `<button class="slot${st?.out_of_position ? ' oop' : ''}" style="left:${xy[i][0]}%;top:${xy[i][1]}%;animation-delay:${i * 35}ms" data-slot="${i}" aria-pressed="${slotSel === i && !pView}" draggable="true"
               aria-label="${pos}${out[i] !== pos ? ' / ' + out[i] : ''}: ${esc(st?.name || 'nobody')}, ${fitWord()} ${n0(st?.fit)}, in possession ${n0(st?.fit_in)}, out of possession ${n0(st?.fit_out)}">
-              ${fitRing(st?.fit_in ?? st?.fit, st?.fit_out ?? st?.fit, st?.fit)}<span class="nm"><span class="lbl">${ph}</span> ${esc(st ? lastName(st.name) : 'Nobody')}</span><span class="bk">${esc(grpName(ph))}</span></button>`; }).join('')}
+              ${fitRing(st?.fit_in ?? st?.fit, st?.fit_out ?? st?.fit, st?.fit)}<span class="nm"><span class="lbl">${ph}</span> ${esc(st ? lastName(st.name) : 'Nobody')}</span>${PHASE !== 'out' && st?.role
+                ? `<span class="bk rl${ROLESEL?.[i] ? '' : ' best'}" title="${esc(roleName(st.role))}">${esc(ROLE_AB[st.role] || roleName(st.role))}${roleEdited(i) ? '<i class="rdot"></i>' : ''}</span>`
+                : `<span class="bk">${esc(grpName(ph))}</span>`}</button>`; }).join('')}
         </div>
         <div class="ring-key"><b>Ring:</b> IN left, OUT right <span class="sw">${[45, 55, 65, 75, 85].map(v => `<i style="background:${ringC(v)}"></i>`).join('')}</span>${out.some((p, i) => p !== formation[i]) ? '<span class="gk"><span class="ghost"></span>OUT position</span>' : ''}</div>
         <div class="left-alts" id="altsBox"></div>
@@ -3827,7 +3876,8 @@ function renderClub() {
       <section aria-label="Weakest slots">
         <h2 class="col-title">Weakest slots <span class="muted sub-l">blended ${fitWord()}</span></h2>
         ${weakest().slice(0, 5).map(s => `<button class="wk" data-slot="${s.slot_index}" aria-pressed="${slotSel === s.slot_index && !pView}">
-            <span class="p">${s.pos}</span><span class="w"><b>${esc(s.starter ? lastName(s.starter.name) : 'Nobody')}</b>${ioBars(s.starter?.fit_in, s.starter?.fit_out)}</span>
+            <span class="p">${s.pos}</span><span class="w"><b>${esc(s.starter ? lastName(s.starter.name) : 'Nobody')}</b>${s.starter?.role
+              ? `<span class="wr${ROLESEL?.[s.slot_index] ? '' : ' best'}">${esc(roleName(s.starter.role))}${roleEdited(s.slot_index) ? '<i class="rdot"></i>' : ''}</span>` : ioBars(s.starter?.fit_in, s.starter?.fit_out)}</span>
             <span class="f mono" style="color:${ringC(s.starter?.fit)}">${n0(s.starter?.fit)}</span></button>`).join('')}
       </section>
       <section aria-label="Slot detail" id="slotCard" class="detail"></section>
@@ -3858,10 +3908,9 @@ async function pDetail(uid) {
   if (!PCACHE.has(uid)) PCACHE.set(uid, api(`/api/player/${uid}?mode=${MODE}`).then(r => r.ok ? r.json() : null).catch(() => null));
   return PCACHE.get(uid);
 }
-function attrPanel(p, pos, title, val) {
+function attrPanel(p, pos, title, val, role) {
   if (!p || MODE === 'moneyball') return '';
-  const col = pos === 'ST' ? 'stc' : pos.toLowerCase(), roles = Object.keys(META.role_pos || {}).filter(r => META.role_pos[r].includes(col));
-  const r = roles.sort((a, b) => (p['role_' + b] ?? -1) - (p['role_' + a] ?? -1))[0]; if (!r) return '';
+  const r = role || rolesAt(pos).sort((a, b) => (p['role_' + b] ?? -1) - (p['role_' + a] ?? -1))[0]; if (!r) return '';
   // ponytail: the tick is a fixed bar (15 for key attributes, 12 for preferred), not what FM's role screen asks; calibrate with roles decoded.
   const rows = [...(META.role_attributes[r] || []).slice(0, 3).map(a => [a, 1]), ...(META.role_secondary?.[r] || []).slice(0, 2).map(a => [a, .5])];
   return `<div class="ap"><h3>${title}<span>${esc(lastName(p.name))}: ${n0(val)}</span></h3>${rows.map(([a, w]) => { const v = p['attributes_' + a];
@@ -3878,8 +3927,7 @@ function renderSlotCard() {
   card.innerHTML = `
     <div class="d-head"><div><h2>${pos} - ${st ? `<span class="pname" data-pview="${st.uid}" role="link" tabindex="0" title="His fit in every slot">${esc(st.name)}</span>` : 'Nobody'}</h2></div>
       ${wk ? '<span class="tag warn">Weakest slot</span>' : `<span class="tag">Slot ${fitWord()} ${n0(st?.fit)}</span>`}</div>
-    <div class="d-phases"><div><span class="kick">In possession</span><b>${esc(grpName(pos))}</b><span>${pos} on the ball</span></div>
-      <div><span class="kick">Out of possession</span><b>${esc(grpName(opos))}</b><span>${opos} off the ball</span></div></div>
+    ${roleBox(i, pos)}
     <div class="d-attrs" id="dAttrs"></div>
     <div class="d-lists">
       <div><div class="t-head"><h3 class="col-title">Transfer targets</h3>${caps.map(k => `<span class="capchip">${k === 'age_max' ? 'Age ' + capVal(k) : CAP[k][2](capVal(k))}<button type="button" data-cap-chip="${k}" aria-label="Remove the ${CAP[k][0].toLowerCase()} filter" title="Remove">×</button></span>`).join('')}${cfCrit().map(([t], n) => `<span class="capchip">${t}<button type="button" data-cf-chip="${n}" aria-label="Remove ${esc(String(t).replace(/<[^>]+>/g, ''))}" title="Remove">×</button></span>`).join('')}
@@ -3889,7 +3937,7 @@ function renderSlotCard() {
             <div class="fp-row"><span>Rank by</span><div class="seg" role="group" aria-label="Rank players by">${[['attributes', 'Attributes'], ['performance', 'Performance']].map(([k, l]) =>
               `<button data-basis="${k}" aria-pressed="${basis() === k}"${MODE === 'moneyball' && k === 'attributes' ? ' disabled title="Attributes are off in Moneyball"' : ''}>${l}</button>`).join('')}</div></div>
             <div class="fp-row"><button class="btn es-btn" data-club-es aria-haspopup="dialog">Edit search <b class="badge" id="cfBadge"${cfCrit().length ? '' : ' hidden'}>${cfCrit().length || ''}</b></button><button class="link" data-filters-clear>Clear</button></div></div></div>
-        <div id="recos"></div></div>
+        ${rolesOn() ? `<div class="rband">${t('{a} targets for {b}', { a: `<b>${esc(ROLESEL?.[i] ? roleName(ROLESEL[i]) : 'Best role')}</b>`, b: t(pos) })}</div>` : ''}<div id="recos"></div></div>
     </div>`;
   capsPaint();
   const ab = $('#altsBox'); if (ab) ab.innerHTML = `<h3 class="col-title">Squad alternatives <span class="muted sub-l">by ${fitWord()}</span></h3>
@@ -3898,7 +3946,17 @@ function renderSlotCard() {
           <span class="f mono" style="color:${ringC(a.fit)}">${n0(a.fit)}<small${a.fit < st?.fit ? ' class="neg"' : ''}>${st?.fit != null && a.fit != null ? (a.fit >= st.fit ? '+' : '') + Math.round(a.fit - st.fit) : ''}</small></span>
           <button class="btn start" data-start="${a.uid}" title="Start ${esc(a.name)} at ${pos}">Start</button>
           <div class="ios">${ioBars(a.fit_in, a.fit_out, [st?.fit_in, st?.fit_out])}</div></div>`).join('') : `<p class="muted">Nobody else in the squad can play ${pos}.</p>`}</div>`;
-  if (st) Promise.all([pDetail(st.uid)]).then(([p]) => { const el = $('#dAttrs'); if (el && slotSel === i && !pView) el.innerHTML = attrPanel(p, pos, 'In possession', st.fit_in) + attrPanel(p, opos, 'Out of possession', st.fit_out); });
+  if (st) Promise.all([pDetail(st.uid)]).then(([p]) => { const el = $('#dAttrs'); if (el && slotSel === i && !pView) el.innerHTML = attrPanel(p, pos, esc(roleName(st.role)) || 'In possession', st.fit_in, st.role) + attrPanel(p, opos, 'Out of possession', st.fit_out); });
+}
+// The slot's in-possession role: "Best role" + every role of the position; the tactic's own is dashed and tagged.
+// Off in Moneyball / the performance basis (stats rank players there, not roles).
+function roleBox(i, pos) {
+  const sel = ROLESEL?.[i] || '', tk = tacKeys()[i], on = rolesOn(), oop = tacOn()?.out_roles?.[i];
+  const chip = (k, l) => `<button class="rchip${k && k === tk ? ' tac-r' : ''}" data-role="${k}" aria-pressed="${sel === k}"${on ? '' : ' disabled'}>${esc(l)}${k && k === tk ? '<small>tactic</small>' : ''}</button>`;
+  return `<div class="rolebox"><div class="rb-head"><span class="kick">In possession role</span>
+      ${on && roleEdited(i) && tk ? `<button class="link" data-role="${tk}">${esc(t('Back to {a}', { a: t(roleName(tk)) }))}</button>` : ''}
+      <span class="oopr">Out of possession <b>${esc(oop || 'n/a')}</b></span></div>
+    <div class="rchips">${chip('', 'Best role')}${rolesAt(pos).map(k => chip(k, roleName(k))).join('')}</div></div>`;
 }
 // One player's blended fit in each of the 11 slots: a mini pitch and a ranked list.
 function renderPlayerView(card) {
@@ -3951,8 +4009,10 @@ function loadRecos() {
     rows.sort((a, b) => (b.fit ?? -1) - (a.fit ?? -1));  // the number shown is what ranks them
     $('#recos').innerHTML = rows.map((p, i) => `
       <div class="tgt" data-player="${p.uid}" role="button" tabindex="0" aria-label="Quick view of ${esc(p.name)}" style="animation-delay:${Math.min(i, 12) * 25}ms">
+        <span class="rk">${i + 1}</span>
         <div class="who"><b><span class="pname" data-profile="${p.uid}" role="link" tabindex="0" title="Full profile">${esc(p.name)}</span>${famDots(p[posKey(p.target_pos || 'MC')])}</b>
-          <span>${esc(natPos(p.natural_positions) || p.target_pos || '')}, ${p.age}, ${esc(p.club_name || 'Free agent')}, ${feeHTML(p)}</span></div>
+          <span>${esc(natPos(p.natural_positions) || p.target_pos || '')}, ${p.age}, ${esc(p.club_name || 'Free agent')}</span></div>
+        <span class="pw">${feeHTML(p)}<span>${wage(p.contract_wage)}</span></span>
         <span class="f mono" style="color:${ringC(p.fit)}">${n0(p.fit)}<small${p.upgrade < 0 ? ' class="neg"' : ''}>${p.upgrade != null && st?.fit != null ? (p.upgrade >= 0 ? '+' : '') + Math.round(p.upgrade) : ''}</small></span>
         <button class="star-btn" data-star="${p.uid}" data-name="${esc(p.name)}" data-club="${p.club_uid ?? ''}" aria-pressed="${shortlist.has(p.uid)}" aria-label="Shortlist ${esc(p.name)}">★</button>
         <div class="ios">${ioBars(p.fit_in, p.fit_out, [st?.fit_in, st?.fit_out])}</div>
@@ -4723,10 +4783,10 @@ $('#esBtn').onclick = () => META && openES();
 
 document.addEventListener('click', e => {
   const pn = e.target.closest('.pname[data-profile]');  // a player's name, anywhere: straight to his full profile
-  if (pn) { e.stopPropagation(); return openProfile(+pn.dataset.profile); }
+  if (pn) { e.stopPropagation(); if (pn.closest('.tgt')) track('club_target', 'profile'); return openProfile(+pn.dataset.profile); }
   const pv = e.target.closest('[data-pview]'); if (pv) { pView = +pv.dataset.pview; filtOpen = false; renderSlotCard(); $$('[data-slot]').forEach(b => b.setAttribute('aria-pressed', false)); return; }
   const row = e.target.closest('.reco[data-player], .tgt[data-player]');  // My Club targets: the row opens the quick view
-  if (row && !e.target.closest('button')) return e.shiftKey ? openProfile(+row.dataset.player) : openPlayer(+row.dataset.player);
+  if (row && !e.target.closest('button')) { if (row.matches('.tgt')) track('club_target', e.shiftKey ? 'profile' : 'quick'); return e.shiftKey ? openProfile(+row.dataset.player) : openPlayer(+row.dataset.player); }
   const t = e.target.closest('button'); if (!t || t.closest('#es')) return;
   const d = t.dataset;
   if (t.id === 'navBack') history.back();
@@ -4745,7 +4805,7 @@ document.addEventListener('click', e => {
   else if (d.close != null) closeDrawer();
   else if (d.i != null && t.closest('#palList')) runPal(+d.i);
   else if (d.star && !t.closest('.ag-cell')) { const p = drawerPlayer && drawerPlayer.uid === +d.star ? drawerPlayer : null;
-    toggleStar(+d.star, p ? p.name : d.name, p ? p.club_uid : (d.club === '' ? null : +d.club)); }
+    toggleStar(+d.star, p ? p.name : d.name, p ? p.club_uid : (d.club === '' ? null : +d.club), t.closest('.tgt') ? 'club' : undefined); }
   else if (d.offer) { const p = shown(+d.offer); closeDrawer(); setPage('offers'); pickOfferPlayer(p); }
   else if (d.similar) { const p = shown(+d.similar); if (p) findSimilar(p); }
   else if (d.compare) openCompare(shown(+d.compare));
@@ -4762,6 +4822,7 @@ document.addEventListener('click', e => {
   else if (d.capx) capX(d.capx);
   else if (d.start) startAt(+d.start, slotSel);
   else if (d.tactic != null) applyTactic(+d.tactic);
+  else if (d.role != null && slotSel != null && !t.disabled) setRole(slotSel, d.role);
   else if (d.phase) { PHASE = d.phase; renderClub(); }
   else if (d.pviewClose != null) { pView = null; renderClub(); }
   else if (d.filters != null) { filtOpen = !filtOpen; renderSlotCard(); loadRecos(); }
@@ -4804,7 +4865,7 @@ document.addEventListener('click', e => { const c = e.target.closest('.cap[data-
 document.addEventListener('keydown', e => { if (!e.target.dataset?.cap) return;  // on the tile: Enter or a digit / currency sign starts typing
   if (e.key === 'Enter') { e.preventDefault(); capEdit(e.target.closest('.cap')); } else if (/^[\d£€$]$/.test(e.key)) { e.preventDefault(); capEdit(e.target.closest('.cap'), e.key); } });
 document.addEventListener('change', e => {
-  if (e.target.id === 'cShape') { formation = [...shapes()[e.target.value]]; OOPF = null; EDITED = true; slotSel = null; pView = null; PINS = {}; saveClubState(); renderClub(); refetchClub(); }
+  if (e.target.id === 'cShape') { formation = [...shapes()[e.target.value]]; OOPF = null; EDITED = true; slotSel = null; pView = null; PINS = {}; ROLESEL = Array(11).fill(''); saveClubState(); renderClub(); refetchClub(); }
 });
 document.addEventListener('input', e => {
   if (e.target.dataset.cap) { const k = e.target.dataset.cap, st = capStops(k), i = +e.target.value;  // past the last stop = no limit

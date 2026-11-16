@@ -291,20 +291,78 @@ def infer_formation(matches, last=5):
     return out[:11]
 
 
-def read_tactics(s, club_uid):
+# FM27 tactic roles, decoded from 9 test saves (fm27-role-test/FINDINGS.md, 2026-11-16). A slot's role is not stored
+# as a name: it is the pair (trail bit, bits 64-95 of the slot's last setting unit), read per position group.
+# "-" = no trail bit. Unconfirmed: Poacher (seen once). Covering/Stopping Wide Centre-Back read as their CB twins.
+ROLE_SIG_GROUP = {"GK": "GK", "DR": "FB", "DL": "FB", "WBR": "WB", "WBL": "WB", "DC": "CB", "DM": "DM", "MC": "CM",
+                  "MR": "WM", "ML": "WM", "AMR": "W", "AML": "W", "AMC": "AM", "ST": "ST"}
+ROLE_SIG = {"in": {
+    "GK": {"21 85": "No-Nonsense Goalkeeper", "- 64,85": "Goalkeeper", "- 76,86": "Ball-Playing Goalkeeper"},
+    "FB": {"12 85": "Inside Wing-Back", "20 85": "Inside Full-Back", "23 86": "Playmaking Wing-Back",
+           "- 66,86": "Full-Back", "- 67,86": "Wing-Back"},
+    "WB": {"6 87": "Advanced Wing-Back", "- 67,86": "Wing-Back"},
+    "CB": {"19 85": "Wide Centre-Back", "22 87": "Overlapping Centre-Back", "- 65,85": "Centre-Back",
+           "- 78,85": "Advanced Centre-Back", "- 85,88": "Ball-Playing Centre-Back", "- 85,93": "No-Nonsense Centre-Back"},
+    "DM": {"3 85": "Half Back", "- 68,85": "Defensive Midfielder", "- 79,86": "Deep-Lying Playmaker"},
+    "CM": {"16 86": "Wide Central Midfielder", "24 87": "Channel Midfielder", "25 86": "Midfield Playmaker",
+           "- 69,86": "Central Midfielder", "- 73,87": "Attacking Midfielder", "- 81,87": "Advanced Playmaker"},
+    "WM": {"- 70,86": "Wide Midfielder"},
+    "W": {"11 86": "Playmaking Winger", "13 87": "Wide Forward", "17 86": "Inside Winger", "- 71,86": "Winger",
+          "- 87,91": "Inside Forward"},
+    "AM": {"0 87": "Free Role", "9 87": "Second Striker", "- 73,87": "Attacking Midfielder", "- 81,87": "Advanced Playmaker"},
+    "ST": {"8 87": "False Nine", "- 74,87": "Deep-Lying Forward", "- 75,87": "Centre Forward", "- 82,87": "Target Forward",
+           "- 83,87": "Poacher", "- 87,95": "Channel Forward"}}, "out": {
+    "GK": {"- 64,86": "Goalkeeper", "- 65,87": "Sweeper Keeper", "- 66,85": "Line-Holding Goalkeeper"},
+    "FB": {"- 73,85": "Full-Back", "- 74,86": "Pressing Full-Back", "- 75,85": "Holding Full-Back"},
+    "WB": {"- 77,86": "Pressing Wing-Back", "- 78,85": "Holding Wing-Back"},
+    "CB": {"- 67,85": "Centre-Back", "- 68,85": "Stopping Centre-Back", "- 69,85": "Covering Centre-Back"},
+    "DM": {"- 79,85": "Defensive Midfielder", "- 80,85": "Dropping Defensive Midfielder", "- 82,85": "Screening Defensive Midfielder"},
+    "CM": {"- 84,86": "Central Midfielder", "- 85,92": "Screening Central Midfielder", "- 86,93": "Wide Covering Central Midfielder",
+           "- 87,91": "Pressing Central Midfielder"},
+    "WM": {"3 86": "Wide Outlet Wide Midfielder", "4 85": "Tracking Wide Midfielder"},
+    "W": {"6 86": "Winger", "7 85": "Tracking Winger", "8 87": "Inside Outlet Winger", "9 87": "Wide Outlet Winger"},
+    "AM": {"0 87": "Central Outlet Attacking Midfielder", "1 87": "Splitting Outlet Attacking Midfielder",
+           "- 85,95": "Tracking Attacking Midfielder", "- 86,94": "Attacking Midfielder"},
+    "ST": {"10 86": "Centre Forward", "11 85": "Tracking Centre Forward", "12 87": "Central Outlet Centre Forward"}}}
+ROLE_BY_NAME = {name: r for r, (name, _, _) in ROLES.items()}
+
+
+def role_name(phase, pos, trail, settings):
+    """The FM27 role name of one slot phase, or None when the signature is unknown (FM26 saves are not decoded)."""
+    if pos not in ROLE_SIG_GROUP or not settings:
+        return None
+    hi = settings[-1].second_bits_high
+    sig = f"{trail.bit_length() - 1 if trail else '-'} {','.join(str(64 + b) for b in range(32) if hi >> b & 1)}"
+    return ROLE_SIG[phase][ROLE_SIG_GROUP[pos]].get(sig)
+
+
+def read_tactics(s, club_uid, roles=False):
     """The first team's saved tactics, the active one (index 0) first, with the starting XI in slot order.
     A tactic slot's position is a bit number of the same mask MATCH_POS decodes (bit 10 = MC, which fmsave leaves
     UNKNOWN). Only first-team tactics (team_slot 0) count: team_slot 1 and 2 are the reserve and youth sides'.
+    Out-of-possession blocks are stored in another order: slot j's block is slots[slots[j].out_of_possession_position_index]
+    (checked on the R9 test save, where the two orders differ). roles=True (FM27) adds each slot's role names, in and out of possession.
     [] when the save holds no usable tactic, so the caller falls back to infer_formation."""
-    def shape(positions):
-        return [MATCH_POS.get(1 << p[0].raw) if p and p[0].raw >= 0 else None for p in positions]
+    def pos_of(p):
+        return MATCH_POS.get(1 << p[0].raw) if p and p[0].raw >= 0 else None
     out = []
     for t in sorted((t for t in s.tactics() if t.club_uid == club_uid and t.team_slot == 0), key=lambda t: t.index):
-        ip = shape([sl.in_possession_positions for sl in t.slots])
-        oop = shape([sl.out_of_possession_positions for sl in t.slots])
+        ip = [pos_of(sl.in_possession_positions) for sl in t.slots]
+        oop_slot = {}
+        for j, sl in enumerate(t.slots):
+            k = (getattr(sl, "unknown", None) or {}).get("out_of_possession_position_index")
+            oop_slot[j] = t.slots[k] if isinstance(k, int) and 0 <= k < len(t.slots) else sl
+        oop = [pos_of(oop_slot[j].out_of_possession_positions) if j in oop_slot else None for j in range(len(t.slots))]
         if len(ip) == 11 and all(p in SLOT_GROUP for p in ip):
-            out.append({"name": t.name, "style": t.style_name, "mentality": t.mentality and t.mentality.label.name.lower(),
-                        "in_possession": ip, "out_of_possession": oop if all(p in SLOT_GROUP for p in oop) and len(oop) == 11 else ip})
+            ok = len(oop) == 11 and all(p in SLOT_GROUP for p in oop)
+            tac = {"name": t.name, "style": t.style_name, "mentality": t.mentality and t.mentality.label.name.lower(),
+                   "in_possession": ip, "out_of_possession": oop if ok else ip}
+            if roles:
+                tac["roles"] = [role_name("in", ip[j], sl.unknown.get("in_possession_trail_bits"), sl.in_possession_settings)
+                                for j, sl in enumerate(t.slots)]
+                tac["out_roles"] = [role_name("out", oop[j], oop_slot[j].unknown.get("out_of_possession_trail_bits"),
+                                              oop_slot[j].out_of_possession_settings) if ok else None for j in range(11)]
+            out.append(tac)
     if out:
         xi = {x.slot: x.player_uid for x in s.selections() if x.club_uid == club_uid and x.team_slot == 0 and not x.substitute}
         out[0]["xi"] = [xi.get(i) for i in range(11)]
@@ -359,7 +417,7 @@ def extract(save_path, out_dir, players=True):
         if club:
             info = {"club_uid": club.club_uid, "club_name": club.club_name, "game": s.info.game}
             try:
-                tactics = read_tactics(s, club.club_uid)
+                tactics = read_tactics(s, club.club_uid, roles=str(s.info.game) == "FM27")
             except fmsave.FmsaveError:  # a tactic layout this fmsave can't read: infer the shape as before
                 tactics = []
             if tactics:
@@ -1516,7 +1574,9 @@ class Track(BaseModel):
 @app.post("/api/track")  # page events: mode switches, shortlist, visible seconds. Ignored unless the user opted in.
 def track(q: Track):
     # profile_tab: which profile page people open (detail = the tab id, a fixed set)
-    if not (q.e in ("mode", "fair_prices", "shortlist", "time") or q.e == "profile_tab" and q.d in PROFILE_TABS):
+    # shortlist (detail club: starred from a My Club target), club_target (quick | profile), club_role (a role chip)
+    if not (q.e in ("mode", "fair_prices", "time", "club_role") or q.e == "profile_tab" and q.d in PROFILE_TABS
+            or q.e == "shortlist" and q.d in (None, "club") or q.e == "club_target" and q.d in ("quick", "profile")):
         raise HTTPException(400, "unknown event")
     telemetry.record(q.e, q.d, q.n)
     return {"ok": True}
@@ -1553,13 +1613,15 @@ SHAPES = {"4-2-3-1": "GK DR DC DC DL DM DM AMR AMC AML ST", "4-3-3": "GK DR DC D
 BASES = ("attributes", "performance")
 
 
-def fit_sql(pos, mode="full", basis="attributes", gate=True):
+def fit_sql(pos, mode="full", basis="attributes", gate=True, role=None):
     """0-100 fit at a slot, only if the player can play there (>= 15/20; gate=False drops that condition). The
-    attributes basis uses the best role score of the slot's group; the performance basis (always in moneyball) the
-    stats-only performance index."""
+    attributes basis uses `role`'s score (a ROLES key the slot plays) or, without one, the best role score of the
+    slot's group; the performance basis (always in moneyball) the stats-only performance index."""
     col = "stc" if pos == "ST" else pos.lower()
     if mode == "moneyball" or basis == "performance":
         score = "stat_score"
+    elif role:
+        score = f"role_{role}"
     else:
         roles = ([f"role_{r}" for r, (_, ps, _) in ROLES.items() if col in ps]  # SW has no FM26 role:
                  or [f"role_{r}" for r in ROLES if ROLE_GROUP[r] == SLOT_GROUP[pos]])  # use its group's
@@ -1574,14 +1636,14 @@ def _blend(fin, fout):
     return None if fin is None else round(fin if fout is None else IN_WEIGHT * fin + (1 - IN_WEIGHT) * fout, 1)
 
 
-def slot_fit_sql(pos, opos, mode="full", basis="attributes"):
+def slot_fit_sql(pos, opos, mode="full", basis="attributes", role=None):
     """Fit at a tactic slot that plays `pos` with the ball and `opos` without it. Who may play the slot is decided by
     the in-possession position (familiarity >= 15, as fit_sql); the out-of-possession part is the role score there,
     without that gate (a winger who drops into midfield need not be a natural midfielder)."""
-    if opos == pos:
+    if opos == pos and not role:
         return fit_sql(pos, mode, basis)
     col = "stc" if pos == "ST" else pos.lower()
-    return (f"CASE WHEN positions_{col} >= 15 THEN {IN_WEIGHT} * ({fit_sql(pos, mode, basis, False)}) "
+    return (f"CASE WHEN positions_{col} >= 15 THEN {IN_WEIGHT} * ({fit_sql(pos, mode, basis, False, role)}) "
             f"+ {1 - IN_WEIGHT:.2f} * ({fit_sql(opos, mode, basis, False)}) END")
 
 
@@ -1616,41 +1678,65 @@ def _oop(f):
     return f
 
 
+def _roles(roles, formation):
+    """Each slot's in-possession role: a ROLES key the slot's position plays, or "" / None for its best role.
+    None (no list): the saved tactic's roles when `formation` is its shape, else best roles everywhere."""
+    if roles is None:
+        tac = (_club().get("tactics") or [{}])[0]
+        if tac.get("in_possession") != formation or "roles" not in tac:
+            return [None] * 11
+        roles = [ROLE_BY_NAME.get(n) for n in tac["roles"]]  # Wide/Overlapping CB: no attributes yet, best role
+    if len(roles) != 11:
+        raise HTTPException(400, "roles needs 11 entries")
+    out = []
+    for pos, r in zip(formation, roles):
+        r = r or None
+        if r and (r not in ROLES or SLOT_COL.get(pos, pos.lower()) not in ROLES[r][1]):
+            raise HTTPException(400, f"role {r} does not fit {pos}")
+        out.append(r)
+    return out
+
+
 def _basis(basis, mode):
     if basis not in BASES:
         raise HTTPException(400, "basis must be attributes or performance")
     return "performance" if mode == "moneyball" else basis
 
 
-def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None):
+def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None, roles=None):
     """pins: {slot index: uid} the manager put there himself; the rest of the XI is picked around them.
     oop: the out-of-possession position of each slot (FM's second shape); None = the same as `formation`.
-    A slot is the pair (in position, out position): players are ranked on its blended fit (slot_fit_sql)."""
+    roles: each slot's in-possession role (ROLES key, None = best role at the position).
+    A slot is (in position, out position, role): players are ranked on its blended fit (slot_fit_sql)."""
     club = _club()
     oop = oop or formation
-    pairs = sorted(set(zip(formation, oop)))
-    key = {pr: f"{pr[0]}_{pr[1]}" for pr in pairs}
+    roles = roles or [None] * 11
+    pairs = sorted(set(zip(formation, oop, roles)), key=str)
+    key = {pr: f"{pr[0]}_{pr[1]}_{pr[2] or 'best'}" for pr in pairs}
     poss = sorted(set(formation) | set(oop))
     cur = con().execute(f"SELECT uid, name, age, ability_current AS ca, ability_potential AS pa, transfer_value, contract_wage, natural_positions, "
-                        f"{', '.join(f'{slot_fit_sql(a, b, mode, basis)} AS fit_{key[(a, b)]}' for a, b in pairs)}, "
+                        f"{', '.join(f'{slot_fit_sql(a, b, mode, basis, r)} AS fit_{key[(a, b, r)]}, {fit_sql(a, mode, basis, False, r)} AS rin_{key[(a, b, r)]}' for a, b, r in pairs)}, "
                         f"{', '.join(f'{fit_sql(p, mode, basis, False)} AS raw_{p}' for p in poss)}, "
-                        f"{', '.join(f'positions_{SLOT_COL.get(p, p.lower())} AS fam_{p}' for p in poss)} FROM players WHERE club_uid = ?", [club["club_uid"]])
+                        f"{', '.join(f'positions_{SLOT_COL.get(p, p.lower())} AS fam_{p}' for p in poss)}, "
+                        f"{', '.join(f'role_{r}' for r in ROLES)} FROM players WHERE club_uid = ?", [club["club_uid"]])
     names = [d[0] for d in cur.description]
     squad = [dict(zip(names, r)) for r in cur.fetchall()]
 
     def card(p, pr):
         if not p:
             return None
-        pos, opos = pr
+        pos, opos, role = pr
         fam = p[f"fam_{pos}"]
+        col = SLOT_COL.get(pos, pos.lower())  # the role he is rated in: the slot's, else his best there
+        role = role or max((r for r, (_, ps, _) in ROLES.items() if col in ps), key=lambda r: p[f"role_{r}"] or -1, default=None)
         c = {"uid": p["uid"], "name": p["name"], "age": p["age"], "fit": p[f"fit_{key[pr]}"], "wage": p["contract_wage"], "value": p["transfer_value"],
              "familiarity": fam, "out_of_position": (fam or 0) < 15, "natural": (p["natural_positions"] or "").split(";")[0] or None,
-             "fit_in": p[f"raw_{pos}"] if (fam or 0) >= 15 else None, "fit_out": p[f"raw_{opos}"] if (fam or 0) >= 15 else None}
+             "fit_in": p[f"rin_{key[pr]}"] if (fam or 0) >= 15 else None, "role": role, "fit_out": p[f"raw_{opos}"] if (fam or 0) >= 15 else None}
         return {**c, "ca": p["ca"], "pa": p["pa"]} if mode == "full" else c
     # Who can play a slot = familiarity >= 15 at its in-possession position, whatever the fit: on the performance basis
     # a player under PERF_MIN minutes has no index (fit None) but can still start there, ranked after those with one.
     ranked = {pr: sorted((s for s in squad if (s[f"fam_{pr[0]}"] or 0) >= 15), key=lambda s: -(s[f"fit_{key[pr]}"] if s[f"fit_{key[pr]}"] is not None else -1)) for pr in pairs}
-    slot_pr = list(zip(formation, oop))
+    slot_pr = list(zip(formation, oop, roles))
     taken, starters = set(), {}
     by_uid = {s["uid"]: s for s in squad}
     for i, uid in (pins or {}).items():  # a pin only holds if he can play there and isn't pinned twice
@@ -1676,7 +1762,7 @@ def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None
         backup = next((s for s in ranked[pr] if s["uid"] not in taken), None)
         sf, bf = fits[i], (backup[f"fit_{key[pr]}"] or 0) if backup else 0
         need = round((team_fit - sf) + 0.3 * (sf - bf), 1)
-        slots.append({"slot_index": i, "pos": pr[0], "out_pos": pr[1], "starter": card(st, pr), "backup": card(backup, pr),
+        slots.append({"slot_index": i, "pos": pr[0], "out_pos": pr[1], "role": pr[2], "starter": card(st, pr), "backup": card(backup, pr),
                       "pinned": i in (pins or {}) and st is not None and st["uid"] == pins[i],
                       "depth": len(ranked[pr]), "need": need,
                       # everyone else who can play there, best first (starters elsewhere included: the manager decides)
@@ -1687,14 +1773,15 @@ def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None
     gender = con().execute("SELECT mode(gender) FROM players WHERE club_uid = ?", [club["club_uid"]]).fetchone()[0]
     shape = next((k for k, v in SHAPES.items() if sorted(v.split()) == sorted(formation)), None)
     xi = {starters[i]["uid"]: i for i in starters if starters[i]}
-    return {"club_uid": club["club_uid"], "club_name": club["club_name"], "formation": formation, "out_formation": oop, "formation_name": shape,
+    return {"club_uid": club["club_uid"], "club_name": club["club_name"], "formation": formation, "out_formation": oop, "formation_name": shape, "roles": roles,
             "mode": mode, "basis": basis, "pins": {i: s["starter"]["uid"] for i, s in enumerate(slots) if s["pinned"]}, "shapes": {k: v.split() for k, v in SHAPES.items()}, "slots": slots, "team_fit": round(team_fit, 1),
-            "tactics": club.get("tactics", []),
+            "tactics": [{**t, "role_keys": [ROLE_BY_NAME.get(n) for n in t["roles"]]} if "roles" in t else t for t in club.get("tactics", [])],
+            "role_names": {r: n for r, (n, _, _) in ROLES.items()},
             # the player view: each squad player's blended fit in every slot, whatever his familiarity there (fam says
             # how well he knows the slot's in-possession position; under 15 he can't be picked for it)
             "squad": [{"uid": p["uid"], "name": p["name"], "age": p["age"], "slot": xi.get(p["uid"]),
-                       "fits": [_blend(p[f"raw_{a}"], p[f"raw_{b}"]) for a, b in slot_pr],
-                       "fam": [p[f"fam_{a}"] for a, _ in slot_pr]} for p in squad],
+                       "fits": [_blend(p[f"rin_{key[pr]}"], p[f"raw_{pr[1]}"]) for pr in slot_pr],
+                       "fam": [p[f"fam_{a}"] for a, _, _ in slot_pr]} for p in squad],
             # No default budget / wage cap (a silent one hid most targets): the UI's money sliders run 0 -> /api/meta's max.
             "gender": gender, "top_wage": wages[0] if wages else 0,
             "xi_median_wage": xi_wages[len(xi_wages) // 2] if xi_wages else 0}
@@ -1702,15 +1789,18 @@ def squad_report(formation, mode="full", basis="attributes", pins=None, oop=None
 
 @app.get("/api/club")
 def club(formation: str | None = None, mode: str = "full", fair_play: bool = False, basis: str = "attributes", pins: str = "",
-         oop: str | None = None):
-    """pins: "slot:uid,slot:uid". oop: the out-of-possession shape, comma-separated like formation."""
+         oop: str | None = None, roles: str | None = None):
+    """pins: "slot:uid,slot:uid". oop: the out-of-possession shape, comma-separated like formation.
+    roles: each slot's in-possession role key, comma-separated, empty = best role (omitted = the saved tactic's)."""
     mode = _mode(mode, fair_play)
     try:
         pin_map = {int(i): int(u) for i, u in (x.split(":") for x in pins.split(",") if x)}
     except ValueError:
         raise HTTPException(400, "pins must be slot:uid pairs")
     telemetry.record("club", mode)
-    return squad_report(_formation(formation.split(",") if formation else None), mode, _basis(basis, mode), pin_map, _oop(oop.split(",") if oop else None))
+    f = _formation(formation.split(",") if formation else None)
+    return squad_report(f, mode, _basis(basis, mode), pin_map, _oop(oop.split(",") if oop else None),
+                        _roles(roles.split(",") if roles is not None else None, f))
 
 
 @app.get("/api/clubs")
@@ -1754,6 +1844,7 @@ class TargetQuery(BaseModel):
     basis: str = "attributes"       # rank by role scores, or by the stats-only performance index
     pins: dict[int, int] = {}       # slot index -> uid the manager started there himself
     oop: list[str] | None = None    # out-of-possession shape (None = same as formation)
+    roles: list[str] | None = None  # each slot's in-possession role key, "" = best role (None = the saved tactic's)
     search: Query | None = None     # Edit search criteria (positions ignored: the slot decides)
 
 
@@ -1770,9 +1861,9 @@ def targets(q: TargetQuery, rep, slots, per_pos, min_rating, extra_where=""):
     wage_ref = max(rep["xi_median_wage"], 1)
     rows = []
     for s in slots:
-        pos, opos, sf = s["pos"], s.get("out_pos", s["pos"]), (s["starter"] or {}).get("fit") or 0
+        pos, opos, role, sf = s["pos"], s.get("out_pos", s["pos"]), s.get("role"), (s["starter"] or {}).get("fit") or 0
         col = "stc" if pos == "ST" else pos.lower()
-        fit = slot_fit_sql(pos, opos, mode, q.basis)
+        fit = slot_fit_sql(pos, opos, mode, q.basis, role)
         where = [f"positions_{col} >= {min_rating}", f"({fit}) > ?", "coalesce(club_uid, -1) <> ?",
                  "(transfer_value > 0 OR free_agent)"]
         args = [sf + 2, club["club_uid"]]
@@ -1791,7 +1882,7 @@ def targets(q: TargetQuery, rep, slots, per_pos, min_rating, extra_where=""):
                  f"- 4 * greatest(ln(greatest(coalesce(contract_wage, 0), 1) / {wage_ref}), 0)")
         # Fit/score are computed on the full table (moneyball fit uses positions_*), then rows come back mode-filtered.
         cur = con().execute(f"""SELECT v.*, t.fit, t.fit_in, t.fit_out, t.score FROM {source(mode)} v JOIN (
-                                   SELECT uid, {fit} AS fit, {fit_sql(pos, mode, q.basis, False)} AS fit_in,
+                                   SELECT uid, {fit} AS fit, {fit_sql(pos, mode, q.basis, False, role)} AS fit_in,
                                           {fit_sql(opos, mode, q.basis, False)} AS fit_out, {score} AS score FROM (SELECT p.*, d.deal_score FROM players p
                                        JOIN (SELECT uid, deal_score_{mode} AS deal_score FROM players) d USING (uid))
                                    WHERE {' AND '.join(where)} {extra_where} ORDER BY score DESC LIMIT {per_pos}) t USING (uid)""", args)
@@ -1807,7 +1898,7 @@ def targets(q: TargetQuery, rep, slots, per_pos, min_rating, extra_where=""):
                 bits.append(f"{deal:.0f}% under fair value")
             if wage > 1.5 * wage_ref:
                 bits.append(f"wage £{wage / 1000:.1f}k/w is {wage / wage_ref:.1f}× your XI median")
-            row.update(target_pos=pos, target_slot_index=s["slot_index"], upgrade=up, replaces=s["starter"],
+            row.update(target_pos=pos, target_role=role, target_slot_index=s["slot_index"], upgrade=up, replaces=s["starter"],
                        reason=", ".join(bits))
             rows.append(row)
     best = {}
@@ -1819,7 +1910,8 @@ def targets(q: TargetQuery, rep, slots, per_pos, min_rating, extra_where=""):
 def _prepare(q: TargetQuery):
     q.mode = _mode(q.mode, q.fair_play)
     q.basis = _basis(q.basis, q.mode)
-    rep = squad_report(_formation(q.formation), q.mode, q.basis, q.pins, _oop(q.oop))
+    f = _formation(q.formation)
+    rep = squad_report(f, q.mode, q.basis, q.pins, _oop(q.oop), _roles(q.roles, f))
     if q.gender is None:
         q.gender = rep["gender"]
     if q.age_max is None:
