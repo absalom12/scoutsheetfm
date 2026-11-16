@@ -21,15 +21,16 @@ L "start: $Cur -> $Target"
 Wait-Process -Id $ProcId -ErrorAction SilentlyContinue
 # Anything still running from the app folder (a second window, a stuck helper) keeps it locked: wait for it too.
 for ($i = 0; $i -lt 100 -and (Get-Process | Where-Object { $_.Path -and $_.Path.StartsWith($Cur + '\') }); $i++) { Start-Sleep -Milliseconds 200 }
+# Plain renames: Move-Item falls back to copy + delete and leaves a half-moved folder when a file is locked.
 $old = Join-Path $Work 'old'
 $why = $null
 for ($i = 0; $i -lt $Tries -and -not (Test-Path -LiteralPath $old); $i++) {
-  try { Move-Item -LiteralPath $Cur -Destination $old -ErrorAction Stop } catch { $why = $_.Exception.Message; Start-Sleep -Milliseconds 200 }
+  try { [IO.Directory]::Move($Cur, $old) } catch { $why = $_.Exception.Message; Start-Sleep -Milliseconds 200 }
 }
 $app = $Cur
 if (Test-Path -LiteralPath $old) {
-  try { Move-Item -LiteralPath $New -Destination $Target -ErrorAction Stop; $app = $Target; L 'RESULT ok' }
-  catch { L ('RESULT failed: new version could not be moved in: ' + $_.Exception.Message); Move-Item -LiteralPath $old -Destination $Cur }
+  try { [IO.Directory]::Move($New, $Target); $app = $Target; L 'RESULT ok' }
+  catch { L ('RESULT failed: new version could not be moved in: ' + $_.Exception.Message); [IO.Directory]::Move($old, $Cur) }
 } else { L ('RESULT failed: the app folder stayed locked: ' + $why) }
 Start-Process -FilePath (Get-ChildItem -LiteralPath $app -Filter *.exe | Select-Object -First 1).FullName
 Start-Sleep -Seconds 2
