@@ -221,9 +221,9 @@ body .ag-theme-quartz-dark {
 .dr-nm { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; } .dr-nm .pos { font-size: 13px; line-height: 22px; padding: 0 7px; }
 .pp-sub { display: flex; align-items: center; min-width: 0; white-space: nowrap; }
 .pp-sub > * + * { margin-left: 9px; padding-left: 9px; border-left: 1px solid var(--line2); }
-.pp-club { flex: none; max-width: 45%; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 600 16px/20px var(--f-body); color: var(--text); }
-.pp-lg { flex: none; }
-.pp-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pp-club { flex: 0 1 auto; max-width: 48%; min-width: 120px; overflow: hidden; text-overflow: ellipsis; font: 600 16px/20px var(--f-body); color: var(--text); }
+.pp-lg { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+.pp-meta { flex: none; }
 .pp-sub .feet { flex: none; }
 .dr-id .pp-sub { flex-wrap: wrap; row-gap: 6px; } .dr-id .pp-club { flex: none; max-width: 100%; }
 .dr-id .pp-sub .feet { flex-basis: 100%; margin: 0; padding: 0; border: 0; }  /* the quick view is narrow: feet get their own line */ .dr-id .link { min-height: 28px; }
@@ -352,6 +352,7 @@ details[open] summary::before { content: "−"; }
 .kpi b { font: 700 18px/1.15 var(--f-mono); white-space: nowrap; }
 .kpi small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .kpi small::first-letter { text-transform: uppercase; }
 .kpi.vt { box-shadow: inset 0 2px 0 var(--wc); }  /* the tile's edge takes the colour of its verdict line */
+.pp-head .kpi.vt small { display: none; }  /* the verdict line stays in the tile's hover text and edge colour */
 .pp-head .kpi.vt { min-width: 0; max-width: 128px; padding: 3px 8px 4px; } .pp-head .kpi.vt b { font-size: 16px; } .pp-head .kpi.vt > span { font-size: 9.5px; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi small.na::first-letter { text-transform: none; } .kpi b .kw { font: 700 13px/21px var(--f-body); color: var(--text); text-transform: none; letter-spacing: 0; }  /* a word in place of a number */
 .pp-act { display: flex; gap: 8px; align-items: center; flex: none; }
@@ -2225,7 +2226,8 @@ const availChips = p => {
   return `<span class="pp-avw">${c.length ? `<span class="pp-av">${c.map(([k, t, tip]) => `<span class="tag ${k}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(t)}</span>`).join('')}</span>` : ''}</span>`;
 };
 // Header sub-line: club first and bold, league when known, then nation, age, height and feet in grey.
-const subLine = (p, big, mb) => `<p class="pp-sub"><b class="pp-club">${esc(p.club_name || 'Free agent')}</b>${p.league ? `<span class="pp-lg">${esc(p.league)}</span>` : ''}<span class="pp-meta">${p.age} yrs${p.height_cm ? `, ${height(p.height_cm)}` : ''} ${natHTML(p, big) || 'Unknown nation'}</span>${mb ? '' : feetHTML(p)}</p>`;
+// Age, height, nation and feet never shrink; a long club name, then the league, give way first (full text in title).
+const subLine = (p, big, mb) => `<p class="pp-sub"><b class="pp-club" title="${esc(p.club_name || 'Free agent')}">${esc(p.club_name || 'Free agent')}</b><span class="pp-meta">${p.age} yrs${p.height_cm ? `, ${height(p.height_cm)}` : ''} ${natHTML(p, big) || 'Unknown nation'}</span>${mb ? '' : feetHTML(p)}${p.league ? `<span class="pp-lg" title="${esc(p.league)}">${esc(p.league)}</span>` : ''}</p>`;
 const roleList = p => MODE === 'moneyball' ? [] : Object.keys(META.roles).map(r => [r, p['role_' + r]]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
 const roleBars = roles => roles.map(([r, x]) => `<div class="rolebar"><span>${label('role_' + r)} <span class="muted" style="font-size:11px">${roleTag(r)}</span></span><div class="tr"><i style="width:${x}%;background:${scoreColor(x)}"></i></div><b class="mono" style="color:${scoreColor(x)};text-align:right">${x.toFixed(0)}</b></div>`).join('');
 // Value and wage tickets; with fair prices on, the fair values, deal % and per-lens fair values.
@@ -2708,7 +2710,7 @@ function secKpis(x = ppx) {
   const k = (lbl, v, c, [word, wc], tip = '') => `<div class="kpi vt" style="--wc:${wc}" title="${word}${tip ? '. ' + esc(tip) : ''}"><span>${lbl}</span><b style="color:${c || 'var(--text)'}">${v}</b><small${word === 'n/a' ? ' class="na"' : ''} style="color:${wc}">${word}</small></div>`;
   if (!hid('ability_current') && p.ability_current != null) { const pa = p.ability_potential, gap = pa != null ? pa - p.ability_current : 0, c = abilityColor(p.ability_current);
     out.push(k('CA / PA', `${p.ability_current} / ${pa ?? 'n/a'}`, c, [`${tierOfV(p.ability_current, TIERS_CA)}${gap > 0 ? ', +' + gap : ''}`, c], 'Current and potential ability, out of 200')); }
-  else if (!mb && p.best_role_score != null) { const c = scoreColor(p.best_role_score);
+  else if (!mb && x !== ppx && p.best_role_score != null) { const c = scoreColor(p.best_role_score);  // the profile shows Role fit right under it
     out.push(k(esc(label('role_' + p.best_role)), p.best_role_score.toFixed(0), c, [tierOfV(p.best_role_score, TIERS_100), c], `Best role: ${esc(label('role_' + p.best_role))}, fit from his attributes`)); }
   if (mb) { const perf = p.stat_score != null ? Math.round(p.stat_score) : null, c = perf != null ? pctColor(perf) : C.muted;
     out.push(k('Performance', perf ?? 'n/a', c, perf != null ? [tierOfV(perf, TIERS_100), c] : [`under ${PERF_MIN} min`, C.muted], 'Output index against his league')); }
