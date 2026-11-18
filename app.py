@@ -941,9 +941,15 @@ def load(d=None):
                (b.club_uid IS NULL AND b.team_id IS NULL) AS free_agent,
                -- the club that owns him sets his price: a Man City youngster on loan at Wimbledon is valued as City's
                coalesce(pc.parent_rep, b.club_reputation) AS owner_club_reputation,
-               -- current club's label, else the most common label among clubs in the contract chain
+               -- current club's label, else the most common label among clubs in the contract chain, else among the clubs
+               -- that trained him (a free agent with no contract, Renato Sanches 2026: Benfica), else Men
                coalesce(cg.gender, (SELECT mode(g2.gender) FROM unnest(string_split(CAST(b.contract_chain_club_uids AS VARCHAR), ';')) x(u)
-                                    JOIN cg g2 ON g2.club_uid = try_cast(x.u AS BIGINT))) AS gender,
+                                    JOIN cg g2 ON g2.club_uid = try_cast(x.u AS BIGINT)),
+                        (SELECT mode(g3.gender) FROM unnest(string_split(CAST(b.home_grown_club_uids AS VARCHAR), ';')) x(u)
+                         JOIN cg g3 ON g3.club_uid = try_cast(x.u AS BIGINT)),
+                        -- no club anywhere in his record: the save stores no player gender, and almost every such player is
+                        -- a man (0 women of 65,199 known on the FM27 test save), so he counts as one rather than as unknown
+                        'Men') AS gender,
                n1.name AS nationality, n1.code AS nationality_code, n3.name AS club_country,
                (SELECT string_agg(n2.name, ', ') FROM unnest(string_split(CAST(b.second_nation_ids AS VARCHAR), ';')) x(u)
                 JOIN nat n2 ON n2.id = try_cast(x.u AS INT)) AS second_nationalities,
