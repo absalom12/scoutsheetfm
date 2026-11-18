@@ -1040,7 +1040,7 @@ PRESETS = {
     "young_talent": ("Talent", "Promising youngsters", "Age ≤ 20, role score ≥ 55 (no hidden info)", "age <= 20 AND best_role_score >= 55", "best_role_score DESC", "overview"),
     "young_performers": ("Talent", "Young performers", "Age ≤ 21, performance index ≥ 60, 900+ min", "age <= 21 AND s_minutes >= 900 AND stat_score >= 60", "stat_score DESC", "season"),
     "free_agents": ("Bargains", "Free agents", "No club, CA ≥ 90", "free_agent AND ability_current >= 90", "ability_current DESC", "contract"),
-    "free_agents_open": ("Bargains", "Free agents (no CA)", "No club, played this season or role score ≥ 50", "free_agent AND (s_minutes >= 450 OR best_role_score >= 50)", "best_role_score DESC", "contract"),
+    "free_agents_open": ("Bargains", "Free agents", "No club, played this season or role score ≥ 50", "free_agent AND (s_minutes >= 450 OR best_role_score >= 50)", "best_role_score DESC", "contract"),
     "bosman": ("Bargains", "Expiring contracts", "≤ 6 months left, CA ≥ 110", "months_left BETWEEN 0 AND 6 AND ability_current >= 110", "ability_current DESC", "contract"),
     "bosman_open": ("Bargains", "Expiring & playing", "≤ 6 months left, 900+ min, performance ≥ 50", "months_left BETWEEN 0 AND 6 AND s_minutes >= 900 AND stat_score >= 50", "stat_score DESC", "contract"),
     "vets": ("Bargains", "Bargain veterans", "Age 29–33, CA ≥ 130, value ≤ £1.5M", "age BETWEEN 29 AND 33 AND ability_current >= 130 AND transfer_value <= 1500000", "ability_current DESC", "overview"),
@@ -1366,7 +1366,7 @@ def money_max():
 
 @app.get("/api/meta")
 def meta():
-    return {"columns": sorted(VISIBLE["full"]), "game_date": GAME_DATE, "positions": list(POS),
+    return {"columns": sorted(VISIBLE["full"]), "game_date": GAME_DATE, "save": loaded_save(), "positions": list(POS),
             "modes": {m: {"lenses": ls, "hidden_columns": sorted(MODE_HIDDEN[m])} for m, ls in MODES.items()},
             "hidden_columns": sorted(MODE_HIDDEN["fair"]),  # legacy: fair-play list
             "roles": ROLE_GROUP, "role_names": {r: n for r, (n, _, _) in ROLES.items()},
@@ -1400,6 +1400,18 @@ def history_path():
 
 def career(save_name):
     return f"club{CLUB['club_uid']}" if CLUB else f"file:{save_name}"
+
+
+def save_name_path():
+    return data_dir() / "save_name.txt"
+
+
+def loaded_save():
+    """File name of the save the data comes from ("" before any load, or for data from an older version)."""
+    try:
+        return save_name_path().read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
 
 
 def snapshot(save_name):
@@ -1485,7 +1497,7 @@ def save_watch():
     return {}
 
 
-def ingest(src, tracked=False, game="FM26"):
+def ingest(src, tracked=False, game="FM26", name=None):
     """Extract a .fm save and make it the only loaded data. One at a time; failures keep the old data."""
     global STATUS
     if not _ingest_lock.acquire(blocking=False):
@@ -1511,9 +1523,11 @@ def ingest(src, tracked=False, game="FM26"):
             raise
         STATUS = "ready"
         telemetry.record("save_loaded")
-        snapshot(Path(src).name)
+        name = name or Path(src).name
+        save_name_path().write_text(name, encoding="utf-8")
+        snapshot(name)
         track_save(src if tracked else None, game)
-        return {"rows": con().execute("SELECT count(*) FROM players").fetchone()[0], "game_date": GAME_DATE}
+        return {"rows": con().execute("SELECT count(*) FROM players").fetchone()[0], "game_date": GAME_DATE, "save": name}
     finally:
         _ingest_lock.release()
 
@@ -1526,7 +1540,7 @@ def upload(file: UploadFile = File(...)):  # fallback picker: the browser sends 
         src = os.path.join(d, "s.fm")
         with open(src, "wb") as f:
             shutil.copyfileobj(file.file, f)
-        return ingest(src)  # a copy: nothing to track
+        return ingest(src, name=Path(file.filename).name)  # a copy: nothing to track
 
 
 class SaveReq(BaseModel):

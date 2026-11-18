@@ -1862,9 +1862,17 @@ function listFailed(why, status) {
   toast(why === 'offline' ? 'ScoutSheet is not answering. If you just closed or restarted the app, open it again.'
     : `The search was refused (error ${status}). Reset the filters, then try again.`, 'bad', 8000);
 }
+// One shortlist per save file (a new career starts empty). The old single list goes to the first save opened after the update.
 let shortlist = new Set();
-try { shortlist = new Set(JSON.parse(localStorage.getItem('fm26_shortlist') || '[]')); } catch {}
-const saveSL = () => { try { localStorage.setItem('fm26_shortlist', JSON.stringify([...shortlist])); } catch {} renderLists(); };
+const slKey = () => 'fm26_shortlist:' + (META?.save || '');
+function loadSL() {
+  try {
+    let v = localStorage.getItem(slKey());
+    if (v === null && META?.save) { v = localStorage.getItem('fm26_shortlist'); if (v !== null) { localStorage.setItem(slKey(), v); localStorage.removeItem('fm26_shortlist'); } }
+    shortlist = new Set(JSON.parse(v || '[]'));
+  } catch { shortlist = new Set(); }
+}
+const saveSL = () => { try { localStorage.setItem(slKey(), JSON.stringify([...shortlist])); } catch {} renderLists(); };
 // All search criteria live in F; the quick bar and the Edit search dialog both edit it.
 const F0 = () => ({ positions: [], age_min: null, age_max: null, value_max: null, wage_max: null, ca_min: null, pa_min: null, risks: false,
   nations: [], months_max: null, squad: '', leagues: [], home_grown: '', free_agent: false, on_loan: false, similar: null, min: {}, max: {} });
@@ -3766,7 +3774,8 @@ function slotXY(form = formation) {
   const seen = {}, count = {}; form.forEach(p => count[p] = (count[p] || 0) + 1);
   return form.map(p => { const [x, y] = PITCH[p] || [50, 50], n = count[p], k = seen[p] = (seen[p] || 0) + 1;
     const spread = n === 1 ? 0 : n === 2 ? 28 : 24;
-    return [Math.min(90, Math.max(10, x + (k - (n + 1) / 2) * spread)), 9 + y * .82]; });  // squeezed off the edges: a centred slot card at y 8% (ST) or 92% (GK) was clipped
+    // FM lists a line's slots right to left (GK DR DC DC DL...), so the first of two DC is the right-hand one
+    return [Math.min(90, Math.max(10, x - (k - (n + 1) / 2) * spread)), 9 + y * .82]; });  // squeezed off the edges: a centred slot card at y 8% (ST) or 92% (GK) was clipped
 }
 const fitWord = () => basis() === 'performance' ? 'performance' : 'fit';
 const mentality = m => m ? t(m.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())) : '';
@@ -4438,7 +4447,7 @@ async function runLoad(doFetch, quiet) {  // quiet: return the error ({status, m
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw Object.assign(new Error(d.detail === 'busy' ? 'Another save is already loading.' : d.detail || 'Upload failed'), { status: r.status });
     if (EMPTY) { location.reload(); return null; }
-    META.game_date = d.game_date; peerCache.clear(); allCache.clear();
+    META.game_date = d.game_date; META.save = d.save; loadSL(); renderLists(); peerCache.clear(); allCache.clear();
     toast(`Loaded ${Number(d.rows).toLocaleString()} players, game date ${d.game_date}`, 'good', 5000);
     refresh(); renderSummary();
     if (CLUB) { CLUB = null; if (st.page === 'club') loadClub(); }
@@ -4563,6 +4572,7 @@ async function init() {
   if (r && r.status === 409) { EMPTY = true; const d = await r.json().catch(() => ({})); return d.detail === 'loading' ? waitReady() : showWelcome(); }
   if (!r || !r.ok) { $('#grid').innerHTML = emptyState('Cannot reach the server', 'Close this tab, open ScoutSheet again, then reload.', '<button class="btn" onclick="location.reload()">Reload</button>'); return; }
   META = await r.json();
+  loadSL();
   for (const [r, n] of Object.entries(META.role_names || {})) LABELS['role_' + r] = n;
   $('#valCap').outerHTML = capTile('value_max', ' line');
   setMode(MODE in (META.modes || {}) ? MODE : 'full', true);

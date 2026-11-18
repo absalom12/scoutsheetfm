@@ -84,7 +84,7 @@ def test_load_save_success_replaces_data(scout, client, tmp_path, monkeypatch):
     monkeypatch.setattr(scout, "extract", fake_extract)
     monkeypatch.setattr(scout, "load", fake_load)
     r = client.post("/api/load-save", json={"name": "a.fm"})
-    assert r.status_code == 200 and r.json() == {"rows": 1, "game_date": "2030-01-01"}
+    assert r.status_code == 200 and r.json() == {"rows": 1, "game_date": "2030-01-01", "save": "a.fm"}
     assert (data / "all_world_players.csv").read_text() == "new"
     assert not (data / "club.json").exists() and scout.STATUS == "ready"
 
@@ -133,7 +133,8 @@ def test_upload_fallback_rejects_non_fm_and_loads_fm(scout, client, monkeypatch)
     monkeypatch.setattr(scout, "extract", lambda src, out: (pathlib.Path(out) / "all_world_players.csv").write_text("up"))
     monkeypatch.setattr(scout, "load", fake_load)
     r = client.post("/api/upload", files={"file": ("My Save.FM", b"bytes")})
-    assert r.status_code == 200 and r.json() == {"rows": 1, "game_date": "2031-01-01"}
+    assert r.status_code == 200 and r.json() == {"rows": 1, "game_date": "2031-01-01", "save": "My Save.FM"}
+    assert scout.loaded_save() == "My Save.FM"  # the page keeps one shortlist per save file name
 
 
 def test_rejects_foreign_host_and_origin(client):
