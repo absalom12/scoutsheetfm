@@ -522,16 +522,20 @@ STAT_SUMS = ["starts", "substitute_appearances", "minutes", "goals", "assists", 
              "non_penalty_expected_goals", "penalties_taken", "penalties_scored"]
 
 
-def _stats_csv(path):
-    """read_csv_auto over the season stats, with every stat column numeric: a column the save leaves empty for every
-    player (FM27's pressures, which fmsave can't read yet) would otherwise come out VARCHAR and break sum()."""
-    cols = con().execute(f"DESCRIBE SELECT * FROM read_csv_auto('{path}', sample_size=-1)").fetchall()
-    empty = {c: "DOUBLE" for c, t, *_ in cols if t == "VARCHAR" and c in STAT_SUMS + ["average_rating", "rated_appearances"]}
-    return f"read_csv_auto('{path}', sample_size=-1{', types=' + repr(empty) if empty else ''})"
+def _stats_table(path):
+    """Season stats CSV -> temp table ss, in one pass (read_csv_auto with sample_size=-1 scans the whole file, and a
+    400k-player save spent 30 s in repeated scans). A stat column the save leaves empty for every player (FM27's
+    pressures, which fmsave can't read yet) would come out VARCHAR and break sum(): it is made numeric. -> column names."""
+    con().execute(f"CREATE OR REPLACE TEMP TABLE ss AS SELECT * FROM read_csv_auto('{path}', sample_size=-1)")
+    cols = con().execute("DESCRIBE ss").fetchall()
+    for c, t, *_ in cols:
+        if t == "VARCHAR" and c in STAT_SUMS + ["average_rating", "rated_appearances"]:
+            con().execute(f'ALTER TABLE ss ALTER "{c}" TYPE DOUBLE')
+    return {c for c, *_ in cols}
 
 
 def _stats_sql(path):
-    have = {c for c, *_ in con().execute(f"DESCRIBE SELECT * FROM {_stats_csv(path)}").fetchall()}
+    have = _stats_table(path)
     sums = ", ".join(f"sum({c}) AS s_{c}" if c in have else f"NULL::DOUBLE AS s_{c}" for c in STAT_SUMS)  # an older export may lack a column
     p90 = lambda e: f"round(({e}) * 90.0 / nullif(s_minutes, 0), 2)"
     return f"""
@@ -541,7 +545,7 @@ def _stats_sql(path):
                           sum(minutes * r.rep) / nullif(sum(minutes) FILTER (WHERE r.rep IS NOT NULL), 0) AS s_league_rep,
                           -- the league where he played most minutes
                           arg_max(cl.league_id, minutes) FILTER (WHERE cl.league_id IS NOT NULL) AS s_league_id
-                   FROM {_stats_csv(path)}
+                   FROM ss
                         LEFT JOIN (SELECT club_uid, max(club_reputation) AS rep FROM raw GROUP BY 1) r USING (club_uid)
                         LEFT JOIN cl USING (club_uid)
                    GROUP BY player_uid),
@@ -925,6 +929,7 @@ def load(d=None):
     con().executemany("INSERT INTO lk VALUES (?, ?, ?)", [(i, k, n) for i, (k, n) in lk.items()])
     con().execute("CREATE OR REPLACE TEMP TABLE st AS " + (_stats_sql(j("season_stats.csv")) if has_s
                else "SELECT NULL::BIGINT AS player_uid LIMIT 0"))
+    con().execute("DROP TABLE IF EXISTS ss")  # st holds the totals
     con().execute("CREATE OR REPLACE TEMP TABLE nat (id INT, name VARCHAR, code VARCHAR)")
     con().executemany("INSERT INTO nat VALUES (?, ?, ?)", [(k, n, c) for k, (n, c) in NATIONS.items()])
     # Save date is not in the CSV; latest contract start is a close proxy.

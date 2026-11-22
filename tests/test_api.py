@@ -510,9 +510,10 @@ def test_read_tactics_first_team_active_first_with_xi(scout):
 def test_stats_csv_reads_an_empty_stat_column_as_numeric(scout, tmp_path):
     f = tmp_path / "season_stats.csv"
     f.write_text("player_uid,minutes,pressures_completed\n1,900,\n2,450,\n")  # FM27: fmsave leaves pressures empty
-    types = dict(scout.con().execute(f"DESCRIBE SELECT * FROM {scout._stats_csv(f)}").fetchall()[i][:2] for i in range(3))
+    scout._stats_table(f)
+    types = dict(r[:2] for r in scout.con().execute("DESCRIBE ss").fetchall())
     assert types["pressures_completed"] == "DOUBLE" and types["minutes"] == "BIGINT"
-    assert scout.con().execute(f"SELECT sum(pressures_completed) FROM {scout._stats_csv(f)}").fetchone() == (None,)
+    assert scout.con().execute("SELECT sum(pressures_completed) FROM ss").fetchone() == (None,)
 
 
 def test_club_out_of_possession_shape_blends_and_feeds_targets(squad, client):
